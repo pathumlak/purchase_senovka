@@ -3,273 +3,235 @@
 **Server IP:** 72.61.174.119
 **SSH:** `ssh root@72.61.174.119`
 
-This server now runs **two independent Django apps**. They share nothing — separate code, separate virtualenvs, separate SQLite databases, separate services, separate subdomains. Work on one never affects the other.
-
----
-
-## Quick Reference — Two Apps
+This server runs **two independent Django apps**. They share nothing — separate code,
+virtualenvs, SQLite databases, systemd services, and subdomains. Work on one never
+affects the other.
 
 | | **Main ERP** | **Purchase ERP** |
 |---|---|---|
 | **Domain** | https://senovkaplastics.cloud | https://purchase.senovkaplastics.cloud |
 | **Project path** | `/var/www/erp-system/erp-system` | `/var/www/purchase/erp-system` |
-| **Venv path** | `/var/www/erp-system/.venv` | `/var/www/purchase/erp-system/.venv` |
-| **Service name** | `erp` | `purchase` |
-| **Gunicorn port** | (existing) | `127.0.0.1:8001` |
+| **Virtualenv** | `/var/www/erp-system/.venv` (beside project) | `/var/www/purchase/erp-system/.venv` (inside project) |
+| **systemd service** | `erp` | `purchase` |
+| **Gunicorn bind** | (existing) | `127.0.0.1:8001` |
 | **Database** | `.../erp-system/erp-system/db.sqlite3` | `/var/www/purchase/erp-system/db.sqlite3` |
 | **Static files** | `.../staticfiles` | `/var/www/purchase/erp-system/staticfiles` |
 | **Nginx config** | `/etc/nginx/sites-available/senovkaplastics.cloud` | `/etc/nginx/sites-available/purchase.senovkaplastics.cloud` |
-| **systemd file** | `/etc/systemd/system/erp.service` | `/etc/systemd/system/purchase.service` |
-| **File owner** | root | `www-data` |
+| **Runs as user** | root | **`www-data`** |
 
-> **Watch the venv difference.** The main ERP's venv sits *beside* the project (`/var/www/erp-system/.venv`). The purchase app's venv is *inside* it (`/var/www/purchase/erp-system/.venv`). Easy to mix up.
-
----
-
-## Activate Virtual Environment
-
-Always run this first before any Python/Django commands.
-
-**Main ERP:**
-```bash
-source /var/www/erp-system/.venv/bin/activate
-cd /var/www/erp-system/erp-system
-```
-
-**Purchase ERP:**
-```bash
-source /var/www/purchase/erp-system/.venv/bin/activate
-cd /var/www/purchase/erp-system
-```
+> ⚠️ **The single most important rule for the Purchase app:** its service runs as
+> **`www-data`**, but you log in and run commands as **root**. Every time you touch its
+> files as root (git pull, edit, reset DB), ownership flips to root and the app can no
+> longer write its SQLite database → **500 errors**. So **every root operation on the
+> Purchase app must end with:**
+>
+> ```bash
+> chown -R www-data:www-data /var/www/purchase
+> systemctl restart purchase
+> ```
 
 ---
 
-## Restart / Stop / Start / Status
+## 0. Two things that WILL bite you (read first)
 
-**Main ERP:**
+### A. `fatal: detected dubious ownership in repository`
+Git refuses to run because the repo is owned by `www-data` while you're root. Fix once
+(persists for future sessions):
+
 ```bash
-systemctl restart erp
-systemctl stop erp
-systemctl start erp
-systemctl status erp
+git config --global --add safe.directory /var/www/purchase
 ```
 
-**Purchase ERP:**
+Now `git pull` works. (This does not change file ownership — it just tells git it's OK.)
+
+### B. Login gives "Server Error (500)" on the Purchase app
+Almost always a **read-only database**: a fresh or root-owned `db.sqlite3` can't be
+written by the `www-data` service, and logging in needs to write a session row.
+
 ```bash
+chown -R www-data:www-data /var/www/purchase
 systemctl restart purchase
+```
+
+Confirm the real cause anytime with:
+
+```bash
+journalctl -u purchase -n 40 --no-pager
+```
+
+Look for `OperationalError: attempt to write a readonly database` → that's this issue.
+
+---
+
+## 1. Deploy an update (pull latest code) — PURCHASE APP
+
+Push your local changes to GitHub **first**, then run on the server:
+
+```bash
+ssh root@72.61.174.119
+git config --global --add safe.directory /var/www/purchase   # once, if not set
+cd /var/www/purchase/erp-system
+
+git pull
+source .venv/bin/activate
+pip install -r requirements.txt        # only if dependencies changed
+python manage.py migrate               # applies any new DB migrations
+python manage.py collectstatic --no-input
+
+# ALWAYS finish with these two (root pull flipped ownership):
+chown -R www-data:www-data /var/www/purchase
+systemctl restart purchase
+systemctl status purchase --no-pager | head -6
+```
+
+Then hard-refresh the site in the browser (**Ctrl+Shift+R**) to bypass cached CSS.
+
+- `git pull` should say it's updating (e.g. `ddcec57..bff7e74`). If it says
+  **"Already up to date"** but you expected changes, you pushed to a different
+  branch/remote than the server tracks — check `git log --oneline -3` and
+  `git remote -v`.
+- `systemctl status` must show **`active (running)`**.
+
+### Main ERP (for reference)
+```bash
+ssh root@72.61.174.119
+cd /var/www/erp-system/erp-system
+git pull
+source /var/www/erp-system/.venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --no-input
+systemctl restart erp
+systemctl status erp --no-pager | head -6
+```
+(The Main ERP runs as root, so it does **not** need the `chown` step.)
+
+---
+
+## 2. Start / stop / restart / status
+
+```bash
+systemctl restart purchase     # or: erp
 systemctl stop purchase
 systemctl start purchase
-systemctl status purchase
+systemctl status purchase --no-pager
 ```
 
-**Nginx (shared by both):**
+**Nginx (shared by both apps):**
 ```bash
-systemctl reload nginx    # reload config (use after editing a site)
-systemctl restart nginx   # full restart
-nginx -t                  # test config BEFORE reloading
-```
-
----
-
-## Deploy Updates from GitHub
-
-> **Important:** Push your local changes to GitHub first, THEN pull on the server.
-
-### Main ERP
-```bash
-ssh root@72.61.174.119
-cd /var/www/erp-system/erp-system
-git pull
-source /var/www/erp-system/.venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --no-input
-systemctl restart erp
-systemctl status erp
-```
-
-### Purchase ERP
-> This repo has the Django project nested one level down, and its files are owned by `www-data`. After pulling as root, re-fix ownership so the app can still write to its SQLite database.
-
-```bash
-ssh root@72.61.174.119
-cd /var/www/purchase/erp-system
-git pull
-source /var/www/purchase/erp-system/.venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --no-input
-chown -R www-data:www-data /var/www/purchase     # restore write access to db.sqlite3
-systemctl restart purchase
-systemctl status purchase
-```
-
-If either status shows errors, check logs (see below).
-
----
-
-## View App Logs (for debugging)
-
-**Main ERP:**
-```bash
-journalctl -u erp -n 50 --no-pager
-journalctl -u erp -f          # live tail
-```
-
-**Purchase ERP:**
-```bash
-journalctl -u purchase -n 50 --no-pager
-journalctl -u purchase -f     # live tail
+nginx -t                # ALWAYS test config before reloading
+systemctl reload nginx  # apply config changes
+systemctl restart nginx # full restart
 ```
 
 ---
 
-## Backup the Database
+## 3. View logs (debugging)
 
-**Main ERP:**
 ```bash
-cp /var/www/erp-system/erp-system/db.sqlite3 /root/erp_backup_$(date +%F_%H%M).sqlite3
+journalctl -u purchase -n 50 --no-pager   # last 50 lines
+journalctl -u purchase -f                 # live tail (Ctrl+C to stop)
 ```
+Swap `purchase` for `erp` for the Main app.
 
-**Purchase ERP:**
+---
+
+## 4. Back up the database
+
 ```bash
+# Purchase
 cp /var/www/purchase/erp-system/db.sqlite3 /root/purchase_backup_$(date +%F_%H%M).sqlite3
+
+# Main
+cp /var/www/erp-system/erp-system/db.sqlite3 /root/erp_backup_$(date +%F_%H%M).sqlite3
+
+ls -lh /root/*_backup_*.sqlite3           # list backups
 ```
 
-**List all backups:**
-```bash
-ls -lh /root/*_backup_*.sqlite3
-```
-
-**Restore a backup (example — Purchase):**
+**Restore a Purchase backup:**
 ```bash
 cp /root/purchase_backup_YYYY-MM-DD_HHMM.sqlite3 /var/www/purchase/erp-system/db.sqlite3
-chown www-data:www-data /var/www/purchase/erp-system/db.sqlite3
+chown -R www-data:www-data /var/www/purchase
 systemctl restart purchase
 ```
 
 ---
 
-## Database — Clean & Migrate
+## 5. Reset the database (wipe + rebuild) — PURCHASE APP
 
-> **Warning:** This deletes ALL data permanently. Take a backup first.
+> 🔴 **DELETES ALL PURCHASE DATA PERMANENTLY.** Back up first (step 4).
 
-### Main ERP
-```bash
-# 1. Backup
-cp /var/www/erp-system/erp-system/db.sqlite3 /root/erp_backup_$(date +%F_%H%M).sqlite3
-# 2. Activate + cd
-source /var/www/erp-system/.venv/bin/activate
-cd /var/www/erp-system/erp-system
-# 3. Delete + rebuild
-rm db.sqlite3
-python manage.py migrate
-python seed_users.py
-systemctl restart erp
-```
-
-### Purchase ERP
 ```bash
 # 1. Backup
 cp /var/www/purchase/erp-system/db.sqlite3 /root/purchase_backup_$(date +%F_%H%M).sqlite3
+
 # 2. Activate + cd
 source /var/www/purchase/erp-system/.venv/bin/activate
 cd /var/www/purchase/erp-system
-# 3. Delete + rebuild
+
+# 3. Delete + rebuild schema
 rm db.sqlite3
 python manage.py migrate
-python seed_users.py
-chown -R www-data:www-data /var/www/purchase     # IMPORTANT for purchase app
+
+# 4. Seed logins + sample data
+python seed_users.py     # creates superadmin / admin
+python seed_data.py      # sample categories, products, customers, pricing (optional)
+
+# 5. Restore ownership (a root-created db.sqlite3 is NOT writable by www-data) + restart
+chown -R www-data:www-data /var/www/purchase
 systemctl restart purchase
+systemctl status purchase --no-pager | head -6
 ```
 
-**Seed users creates:**
+**Default logins after reset:**
 
 | Username | Password | Role |
 |---|---|---|
 | `superadmin` | `superadmin123` | Super Admin |
 | `admin` | `admin123` | Admin |
 
-> Change passwords at `/profile/` after first login.
+> Change these at `/profile/` immediately after first login.
+
+`seed_data.py` adds: 5 categories (Fiber, Foam, Roof Tiles, Pipes, Hardware),
+20 products, 15 customers with balances, and customer-specific pricing.
+It uses `get_or_create`, so it's safe to run on an existing DB without duplicating.
 
 ---
 
-## Seed Sample Data (does NOT delete anything)
+## 6. SSL / HTTPS
 
-Adds sample categories, products, and customers to an existing database. Safe to run multiple times (`get_or_create`).
-
-**Main ERP:**
-```bash
-source /var/www/erp-system/.venv/bin/activate
-cd /var/www/erp-system/erp-system
-python seed_users.py
-python seed_data.py
-```
-
-**Purchase ERP:**
-```bash
-source /var/www/purchase/erp-system/.venv/bin/activate
-cd /var/www/purchase/erp-system
-python seed_users.py
-python seed_data.py
-chown -R www-data:www-data /var/www/purchase
-```
-
-Adds: 5 categories (Fiber, Foam, Roof Tiles, Pipes, Hardware), 20 products, 15 customers with balances, and customer-specific pricing.
-
----
-
-## Full Fresh Setup (clean install)
-
-### Purchase ERP (from scratch, matching how it was deployed)
-```bash
-# Clone (folder forced to "purchase")
-cd /var/www
-git clone https://github.com/pathumlak/purchase_senovka.git purchase
-cd /var/www/purchase/erp-system
-
-# Virtualenv + deps
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt gunicorn
-
-# Django setup
-python manage.py migrate
-python manage.py collectstatic --no-input
-
-# Ownership (service runs as www-data; SQLite needs write access to the folder)
-chown -R www-data:www-data /var/www/purchase
-
-# Service
-systemctl daemon-reload
-systemctl enable --now purchase
-systemctl status purchase
-```
-
----
-
-## SSL / HTTPS Renewal
-
-Both certs auto-renew via certbot's timer. To check or force:
+Both certs auto-renew via certbot's timer.
 
 ```bash
-certbot certificates          # list all certs + expiry
-certbot renew --dry-run       # test renewal without changing anything
-certbot renew                 # force a renewal check
-systemctl reload nginx        # apply after renewal
-```
+certbot certificates          # list certs + expiry
+certbot renew --dry-run       # test renewal
+certbot renew                 # force renewal check
+systemctl reload nginx        # apply after a renewal
 
-To issue a cert for a brand-new subdomain:
-```bash
+# issue a cert for a brand-new subdomain:
 certbot --nginx -d NEWSUB.senovkaplastics.cloud
 ```
 
 ---
 
-## The `purchase.service` File (reference)
+## 7. Troubleshooting cheat sheet
 
-Located at `/etc/systemd/system/purchase.service`:
+| Symptom | Cause | Fix |
+|---|---|---|
+| `fatal: detected dubious ownership` on git | repo owned by www-data, you're root | `git config --global --add safe.directory /var/www/purchase` |
+| **500 right after clicking Sign In** | read-only SQLite (ownership reset) | `chown -R www-data:www-data /var/www/purchase && systemctl restart purchase` |
+| Site works but **can't save data** | same ownership issue | same as above |
+| **400 Bad Request** in browser | domain missing from `ALLOWED_HOSTS` in `erp/settings.py` | add the domain, restart. (A `400` from `curl http://127.0.0.1:8001` is normal.) |
+| Site loads **with no styling** | static not collected / wrong nginx alias | `collectstatic --no-input`, then re-chown; check nginx `/static/` alias path |
+| **Wrong app restarted** | `erp` vs `purchase` mixed up | they're independent — double-check the service name |
+| **Port conflict** | both apps on same port | Purchase must stay on `127.0.0.1:8001`; never share a port |
+| CSS changes not showing | browser cache | hard refresh (Ctrl+Shift+R); confirm `collectstatic` ran |
 
+---
+
+## 8. Reference — Purchase service & nginx
+
+**`/etc/systemd/system/purchase.service`:**
 ```ini
 [Unit]
 Description=Purchase ERP (Django)
@@ -284,15 +246,9 @@ ExecStart=/var/www/purchase/erp-system/.venv/bin/gunicorn --workers 3 --bind 127
 [Install]
 WantedBy=multi-user.target
 ```
-
 After editing it: `systemctl daemon-reload && systemctl restart purchase`
 
----
-
-## The Purchase Nginx Block (reference)
-
-Located at `/etc/nginx/sites-available/purchase.senovkaplastics.cloud` (certbot added the SSL/443 section automatically — the HTTP block below is the original):
-
+**`/etc/nginx/sites-available/purchase.senovkaplastics.cloud`** (HTTP block; certbot adds the 443/SSL block automatically):
 ```nginx
 server {
     listen 80;
@@ -306,32 +262,41 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /static/ {
-        alias /var/www/purchase/erp-system/staticfiles/;
-    }
-
-    location /media/ {
-        alias /var/www/purchase/erp-system/media/;
-    }
+    location /static/ { alias /var/www/purchase/erp-system/staticfiles/; }
+    location /media/  { alias /var/www/purchase/erp-system/media/; }
 }
 ```
 
 ---
 
-## User Role Reference
+## 9. First-time setup (clone from scratch) — PURCHASE APP
 
-| Role | Can Do |
-|---|---|
-| **Super Admin** | Everything + manage users at `/users/` + filter activity logs by user |
-| **Admin** | Everything — billing, production, customers, bookings, petty cash, purchasing |
+```bash
+cd /var/www
+git clone https://github.com/pathumlak/purchase_senovka.git purchase
+cd /var/www/purchase/erp-system
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt gunicorn
+
+python manage.py migrate
+python manage.py collectstatic --no-input
+python seed_users.py
+
+chown -R www-data:www-data /var/www/purchase
+systemctl daemon-reload
+systemctl enable --now purchase
+systemctl status purchase --no-pager
+```
 
 ---
 
-## Common Gotchas
+## Golden rules
 
-- **Wrong app restarted?** Double-check the service name — `erp` vs `purchase`. They're independent.
-- **Purchase site works but can't save data** → ownership got reset (usually after a `git pull` as root). Fix: `chown -R www-data:www-data /var/www/purchase && systemctl restart purchase`
-- **Site loads with no styling** → run `collectstatic`, and confirm the Nginx `/static/` alias path is right.
-- **400 Bad Request in browser** → the domain isn't in `ALLOWED_HOSTS` in `erp/settings.py`. (A `400` from `curl http://127.0.0.1:8001` is *normal* — that's the bare-IP being rejected.)
-- **Port conflict** → the purchase app must stay on `8001`. Never point both apps at the same port.
-- **Never edit `settings_local.py` for production** — it has `DEBUG=True`. The live services use `erp/settings.py` (`DEBUG=False`).
+1. **Push to GitHub first, then pull on the server.** Never edit code directly on the server.
+2. **Every root action on `/var/www/purchase` ends with `chown -R www-data:www-data /var/www/purchase` + `systemctl restart purchase`.**
+3. **Back up the database before any reset or risky change.**
+4. **`nginx -t` before every `systemctl reload nginx`.**
+5. **Never edit `settings_local.py` for production** — it has `DEBUG=True`. The live
+   services use `erp/settings.py` (`DEBUG=False`).
