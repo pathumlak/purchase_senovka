@@ -17,10 +17,10 @@ from erp.models import UserProfile
 
 USERS = [
     {
-        'username':   'Dushan',
+        'username':   'Dinusha',
         'password':   'superadmin123',
-        'first_name': 'Dushan',
-        'last_name':  'Senathilaka',
+        'first_name': 'Dinusha',
+        'last_name':  'Admin',
         'role':       UserProfile.SUPERADMIN,
         'is_staff':   True,
     },
@@ -32,7 +32,7 @@ USERS = [
         'role':       UserProfile.ADMIN,
         'is_staff':   False,
     },{
-        'username':   'Dinusha',
+        'username':   'Dushan',
         'password':   '123456789',
         'first_name': 'Admin',
         'last_name':  'User',
