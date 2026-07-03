@@ -36,7 +36,7 @@
 
 <div class="header">
   <div>
-    <div class="company">SENOVKA ERP</div>
+    <div class="company">SENOVKA Purchasing</div>
     <div style="color:#64748b;margin-top:4px;">Purchase Order</div>
   </div>
   <div class="po-meta">
@@ -111,7 +111,7 @@
 </div>
 {% endif %}
 
-<div class="footer">SENOVKA ERP &bull; {{ order.order_number }} &bull; Printed {{ generated_at|date:"d M Y H:i" }}</div>
+<div class="footer">SENOVKA Purchasing &bull; {{ order.order_number }} &bull; Printed {{ generated_at|date:"d M Y H:i" }}</div>
 
 {% if printable %}
 <script>window.onload = function(){ window.print(); }</script>

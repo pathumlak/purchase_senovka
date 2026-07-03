@@ -30,7 +30,7 @@
 </style>
 </head>
 <body>
-<h1>Cheque Sales Report &mdash; SENOVKA ERP</h1>
+<h1>Cheque Sales Report &mdash; SENOVKA Purchasing</h1>
 <p class="meta">Generated: {{ generated_at|date:"d M Y H:i" }}</p>
 
 {% if q or status or customer or date_from or date_to or cheque_status %}
@@ -109,6 +109,6 @@
     </tr>
   </tfoot>
 </table>
-<p class="footer">SENOVKA ERP &bull; Cheque Sales Report &bull; {{ generated_at|date:"d M Y" }}</p>
+<p class="footer">SENOVKA Purchasing &bull; Cheque Sales Report &bull; {{ generated_at|date:"d M Y" }}</p>
 </body>
 </html>

@@ -23,7 +23,7 @@
 </head>
 <body>
 
-<h1>SENOVKA ERP — Stock Ledger Report</h1>
+<h1>SENOVKA Purchasing — Stock Ledger Report</h1>
 <p class="meta">Generated: {{ generated_at|date:"d M Y H:i" }}</p>
 
 {% if date_from or date_to %}
@@ -71,6 +71,6 @@
 <p style="text-align:center;padding:16px;color:#9ca3af;">No stock movement found for the selected filters.</p>
 {% endfor %}
 
-<p class="footer">SENOVKA ERP &mdash; Stock Ledger &mdash; {{ generated_at|date:"d M Y" }}</p>
+<p class="footer">SENOVKA Purchasing &mdash; Stock Ledger &mdash; {{ generated_at|date:"d M Y" }}</p>
 </body>
 </html>

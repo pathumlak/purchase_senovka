@@ -4,15 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ERP System{% endblock %}</title>
+    <title>{% block title %}SENOVKA Purchasing{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
-                        accent: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+                        primary: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' },
+                        accent: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a' },
                     }
                 }
             }
@@ -30,7 +30,7 @@
 
         /* ── Dark Sidebar ───────────────────────── */
         #sidebar {
-            background: #0f1117;
+            background: #0d1512;
             border-right: 1px solid rgba(255,255,255,.07);
         }
         .sidebar-logo {
@@ -41,9 +41,9 @@
         }
         .sidebar-logo-icon {
             width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-            background: linear-gradient(135deg, #c9a84c 0%, #b8963f 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(201,168,76,.35);
+            box-shadow: 0 4px 12px rgba(16,185,129,.35);
         }
         .sidebar-logo-icon svg { width: 18px; height: 18px; color: #fff; }
         .sidebar-logo-text { line-height: 1.15; }
@@ -77,10 +77,10 @@
         .sidebar-link:hover { background: rgba(255,255,255,.09); color: #fff; }
         .sidebar-link:hover svg { opacity: 1; }
         .sidebar-link.active {
-            background: rgba(201,168,76,.15);
-            color: #c9a84c;
+            background: rgba(16,185,129,.15);
+            color: #34d399;
         }
-        .sidebar-link.active svg { opacity: 1; color: #c9a84c; }
+        .sidebar-link.active svg { opacity: 1; color: #34d399; }
 
         /* ── Sidebar toggle ─────────────────────── */
         #sidebar { transition: transform .25s ease; }
@@ -99,7 +99,7 @@
             display: none;
             align-items: center;
             gap: 8px;
-            background: #0f1117;
+            background: #0d1512;
             color: #fff;
             border: 1px solid rgba(255,255,255,.1);
             border-radius: 10px;
@@ -137,8 +137,8 @@
             <a href="{% url 'home' %}" class="sidebar-logo" aria-label="Go to home">
                 <img src="{% static 'images/logo.jpeg' %}" alt="SENOVKA" style="height:40px;width:auto;object-fit:contain;border-radius:6px;flex-shrink:0;">
                 <div class="sidebar-logo-text">
-                    <div class="sidebar-logo-name">SENOVKA ERP</div>
-                    <div class="sidebar-logo-sub">Management System</div>
+                    <div class="sidebar-logo-name">SENOVKA Purchasing</div>
+                    <div class="sidebar-logo-sub">Purchasing Portal</div>
                 </div>
             </a>
             {% with is_superadmin=request.user.profile.is_superadmin %}
@@ -742,8 +742,8 @@
         activeIdx = idx;
         resultsEl.querySelectorAll('.palette-result-item').forEach(function (el, i) {
           if (i === idx) {
-            el.style.background = '#eff6ff';
-            el.style.color = '#1d4ed8';
+            el.style.background = '#ecfdf5';
+            el.style.color = '#047857';
             el.scrollIntoView({ block: 'nearest' });
           } else {
             el.style.background = '';
