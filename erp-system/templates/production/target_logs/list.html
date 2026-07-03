@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+{% block title %}Target Tracker{% endblock %}
+{% block page_title %}Target Tracker{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 max-w-full">
+
+  {# ── Toolbar ── #}
+  <div class="flex flex-wrap items-center gap-3 mb-5">
+    <form method="get" class="flex flex-wrap gap-2 items-center">
+      <input type="month" name="month" value="{{ month }}"
+             class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+             onchange="this.form.submit()">
+      <select name="employee" onchange="this.form.submit()"
+              class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+        <option value="">All Employees</option>
+        {% for emp in employees %}
+        <option value="{{ emp.pk }}" {% if employee_id == emp.pk|stringformat:"s" %}selected{% endif %}>{{ emp.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <div class="flex gap-2 ml-auto flex-wrap">
+      <a href="{% url 'target_log_export_excel' %}?month={{ month }}{% if employee_id %}&employee={{ employee_id }}{% endif %}"
+         class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Excel
+      </a>
+      <a href="{% url 'target_log_export_pdf' %}?month={{ month }}{% if employee_id %}&employee={{ employee_id }}{% endif %}"
+         class="px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        PDF
+      </a>
+      <a href="{% url 'target_log_points_report' %}?month={{ month }}"
+         class="px-3 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Points Report
+      </a>
+      <button onclick="openModal('itemModal')"
+              class="px-3 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition">
+        Manage Items
+      </button>
+      <button onclick="openModal('shiftTplModal')"
+              class="px-3 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition">
+        Shift Templates
+      </button>
+      <button onclick="openModal('addModal')"
+              class="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Entry
+      </button>
+    </div>
+  </div>
+
+  {# ── Table ── #}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+    <table class="w-full text-sm" id="logTable">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Machine</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Shift</th>
+          <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Target</th>
+          <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actual</th>
+          <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Point</th>
+          <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Downtime</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Remarks</th>
+          <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Del</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for log in page_obj %}
+        <tr class="hover:bg-gray-50" data-id="{{ log.pk }}">
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <span class="view-mode">{{ log.date }}</span>
+            <input type="date" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-32" value="{{ log.date|date:'Y-m-d' }}" data-field="date">
+          </td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <span class="view-mode">{{ log.employee.name }}</span>
+            <select class="edit-mode hidden px-1 py-0.5 border rounded text-xs" data-field="employee">
+              {% for emp in employees %}<option value="{{ emp.pk }}" {% if emp.pk == log.employee.pk %}selected{% endif %}>{{ emp.name }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="px-3 py-2.5">
+            <span class="view-mode">{{ log.machine_name }}</span>
+            <input type="text" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-28" value="{{ log.machine_name }}" data-field="machine_name">
+          </td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <span class="view-mode">{{ log.item.name }}</span>
+            <select class="edit-mode hidden px-1 py-0.5 border rounded text-xs" data-field="item">
+              {% for it in all_items %}<option value="{{ it.pk }}" {% if it.pk == log.item.pk %}selected{% endif %}>{{ it.name }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <span class="view-mode text-gray-500 text-xs">{{ log.shift_template.name|default:"-" }}</span>
+            <select class="edit-mode hidden px-1 py-0.5 border rounded text-xs" data-field="shift_template">
+              <option value="">—</option>
+              {% for tpl in templates %}<option value="{{ tpl.pk }}" {% if tpl.pk == log.shift_template.pk %}selected{% endif %}>{{ tpl.name }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono">
+            <span class="view-mode">{{ log.target_qty }}</span>
+            <input type="number" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-16 text-right" value="{{ log.target_qty }}" data-field="target_qty">
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono">
+            <span class="view-mode {% if log.actual_qty >= log.target_qty %}text-green-600{% else %}text-red-600{% endif %}">{{ log.actual_qty }}</span>
+            <input type="number" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-16 text-right" value="{{ log.actual_qty }}" data-field="actual_qty">
+          </td>
+          <td class="px-3 py-2.5 text-center" data-point-cell>
+            <span class="view-mode inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {% if log.point == 1 %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+              {{ log.point }}
+            </span>
+            <select class="edit-mode hidden px-1 py-0.5 border rounded text-xs" data-field="point">
+              <option value="1" {% if log.point == 1 %}selected{% endif %}>1 – Achieved</option>
+              <option value="0" {% if log.point == 0 %}selected{% endif %}>0 – Not Achieved</option>
+            </select>
+          </td>
+          <td class="px-3 py-2.5 text-right text-gray-500 text-xs">
+            <span class="view-mode">{{ log.downtime_minutes }}</span>
+            <input type="number" step="0.01" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-16 text-right" value="{{ log.downtime_minutes }}" data-field="downtime_minutes">
+          </td>
+          <td class="px-3 py-2.5 text-gray-500 text-xs">
+            <span class="view-mode">{{ log.downtime_reason|default:"-" }}</span>
+            <input type="text" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-28" value="{{ log.downtime_reason }}" data-field="downtime_reason">
+          </td>
+          <td class="px-3 py-2.5 text-gray-500 text-xs">
+            <span class="view-mode">{{ log.remarks|default:"-" }}</span>
+            <input type="text" class="edit-mode hidden px-1 py-0.5 border rounded text-xs w-28" value="{{ log.remarks }}" data-field="remarks">
+          </td>
+          <td class="px-3 py-2.5 text-center">
+            <button onclick="deleteLog({{ log.pk }}, this)" class="text-red-400 hover:text-red-600 transition p-1" title="Delete">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" class="px-4 py-12 text-center text-gray-400 text-sm">No entries for this month. Click <strong>Add Entry</strong> to begin.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+    <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} — {{ page_obj.paginator.count }} entr{{ page_obj.paginator.count|pluralize:"y,ies" }}</p>
+    <div class="flex items-center gap-1.5">
+      {% if page_obj.has_previous %}
+      <a href="?month={{ month }}&employee={{ employee_id }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>
+      {% else %}
+      <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Previous</span>
+      {% endif %}
+      {% for page_num in page_obj.paginator.page_range %}
+        {% if page_num == page_obj.number %}
+        <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ page_num }}</span>
+        {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+        <a href="?month={{ month }}&employee={{ employee_id }}&page={{ page_num }}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <a href="?month={{ month }}&employee={{ employee_id }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>
+      {% else %}
+      <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Next</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  <p class="text-xs text-gray-400 mt-2">Click any cell to edit inline. Changes save automatically on blur.</p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════ #}
+{# ADD ENTRY MODAL #}
+{# ══════════════════════════════════════════════════════════════ #}
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+  <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg mx-4 modal-enter">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 class="font-semibold text-gray-900">Add Target Log Entry</h3>
+      <button onclick="closeModal('addModal')" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Date</label>
+          <input type="date" id="add_date" value="{{ today }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Employee</label>
+          <select id="add_employee" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+            <option value="">Select employee…</option>
+            {% for emp in employees %}<option value="{{ emp.pk }}">{{ emp.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Machine / Mould Name</label>
+        <input type="text" id="add_machine" placeholder="e.g. Machine A" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Item</label>
+          <select id="add_item" onchange="calcTarget()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+            <option value="">Select item…</option>
+            {% for it in items %}<option value="{{ it.pk }}" data-rate="{{ it.hourly_qty }}">{{ it.name }} ({{ it.hourly_qty }}/hr)</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Shift Template</label>
+          <select id="add_shift" onchange="calcTarget()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+            <option value="">Select shift…</option>
+            {% for tpl in templates %}<option value="{{ tpl.pk }}" data-hours="{{ tpl.duration_hours }}">{{ tpl.name }} ({{ tpl.duration_display }})</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div id="calc_preview" class="hidden bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm">
+        Auto Target: <strong id="calc_target_display">—</strong>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Target Qty</label>
+          <input type="number" id="add_target" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-blue-50" readonly>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Actual Qty</label>
+          <input type="number" id="add_actual" min="0" onchange="autoPoint()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Point</label>
+          <select id="add_point" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+            <option value="1">1 – Achieved</option>
+            <option value="0">0 – Not Achieved</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Downtime (min)</label>
+          <input type="number" id="add_downtime" value="0" min="0" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Reason</label>
+          <input type="text" id="add_reason" placeholder="Optional" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
+        <input type="text" id="add_remarks" placeholder="Optional" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div id="add_error" class="hidden text-red-600 text-xs bg-red-50 border border-red-200 rounded p-2"></div>
+    </div>
+    <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2">
+      <button onclick="closeModal('addModal')" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+      <button onclick="submitAdd()" class="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════ #}
+{# MANAGE ITEMS MODAL #}
+{# ══════════════════════════════════════════════════════════════ #}
+<div id="itemModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+  <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg mx-4 modal-enter">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 class="font-semibold text-gray-900">Manage Production Items</h3>
+      <button onclick="closeModal('itemModal')" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-5 py-4">
+      {# Add form #}
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="new_item_name" placeholder="Item name" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        <input type="number" id="new_item_rate" placeholder="Qty/hr" step="0.01" min="0" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        <button onclick="addItem()" class="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition">Add</button>
+      </div>
+      <div id="item_list" class="space-y-1.5 max-h-64 overflow-y-auto">
+        {% for it in all_items %}
+        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg" data-item-id="{{ it.pk }}">
+          <input type="text" value="{{ it.name }}" class="flex-1 px-2 py-1 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-primary-400 outline-none" onblur="saveItem({{ it.pk }}, this.value, this.parentElement.querySelector('.rate-input').value)">
+          <input type="number" value="{{ it.hourly_qty }}" step="0.01" min="0" class="rate-input w-20 px-2 py-1 border border-gray-200 rounded text-sm text-right focus:ring-1 focus:ring-primary-400 outline-none" onblur="saveItem({{ it.pk }}, this.parentElement.querySelector('input[type=text]').value, this.value)">
+          <span class="text-xs text-gray-400">/hr</span>
+          <button onclick="deleteItem({{ it.pk }}, this)" class="text-red-400 hover:text-red-600 p-1 rounded transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-400 text-center py-4" id="no_items_msg">No items yet. Add one above.</p>
+        {% endfor %}
+      </div>
+      <div id="item_error" class="hidden text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded p-2"></div>
+    </div>
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════ #}
+{# SHIFT TEMPLATES MODAL #}
+{# ══════════════════════════════════════════════════════════════ #}
+<div id="shiftTplModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+  <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg mx-4 modal-enter">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 class="font-semibold text-gray-900">Manage Shift Templates</h3>
+      <button onclick="closeModal('shiftTplModal')" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-5 py-4">
+      <div class="grid grid-cols-4 gap-2 mb-4 items-end">
+        <div class="col-span-1">
+          <label class="block text-xs text-gray-600 mb-1">Name</label>
+          <input type="text" id="new_tpl_name" placeholder="8am-5pm" class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Start</label>
+          <input type="time" id="new_tpl_start" class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">End</label>
+          <input type="time" id="new_tpl_end" class="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div class="flex items-center gap-1 mt-4">
+          <input type="checkbox" id="new_tpl_midnight" class="w-3.5 h-3.5">
+          <label for="new_tpl_midnight" class="text-xs text-gray-600">Next day</label>
+        </div>
+      </div>
+      <button onclick="addTemplate()" class="w-full px-3 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition mb-4">Add Template</button>
+      <div id="tpl_list" class="space-y-1.5 max-h-56 overflow-y-auto">
+        {% for tpl in templates %}
+        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm" data-tpl-id="{{ tpl.pk }}">
+          <span class="flex-1 font-medium text-gray-800">{{ tpl.name }}</span>
+          <span class="text-xs text-gray-500">{{ tpl.duration_display }}</span>
+          <button onclick="deleteTemplate({{ tpl.pk }}, this)" class="text-red-400 hover:text-red-600 p-1 rounded transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-400 text-center py-4" id="no_tpl_msg">No templates yet.</p>
+        {% endfor %}
+      </div>
+      <div id="tpl_error" class="hidden text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded p-2"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ── Auto-calculate target ─────────────────────────────────────
+function calcTarget() {
+  const itemSel = document.getElementById('add_item');
+  const shiftSel = document.getElementById('add_shift');
+  const itemId = itemSel.value;
+  const shiftId = shiftSel.value;
+  if (!itemId || !shiftId) {
+    document.getElementById('calc_preview').classList.add('hidden');
+    return;
+  }
+  fetch(`{% url 'target_log_calc_api' %}?item=${itemId}&shift_template=${shiftId}`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('add_target').value = d.target_qty;
+      document.getElementById('calc_target_display').textContent = d.target_qty + (d.duration_display ? ` (${d.duration_display})` : '');
+      document.getElementById('calc_preview').classList.remove('hidden');
+      autoPoint();
+    });
+}
+
+function autoPoint() {
+  const actual = parseInt(document.getElementById('add_actual').value) || 0;
+  const target = parseInt(document.getElementById('add_target').value) || 0;
+  const pointSel = document.getElementById('add_point');
+  if (actual > 0) {
+    pointSel.value = actual >= target ? '1' : '0';
+  }
+}
+
+// ── Submit Add Entry ──────────────────────────────────────────
+function submitAdd() {
+  const errEl = document.getElementById('add_error');
+  errEl.classList.add('hidden');
+  const data = new URLSearchParams({
+    csrfmiddlewaretoken: CSRF,
+    date: document.getElementById('add_date').value,
+    employee: document.getElementById('add_employee').value,
+    machine_name: document.getElementById('add_machine').value,
+    item: document.getElementById('add_item').value,
+    shift_template: document.getElementById('add_shift').value,
+    cavity: 1,
+    target_qty: document.getElementById('add_target').value,
+    actual_qty: document.getElementById('add_actual').value,
+    point: document.getElementById('add_point').value,
+    downtime_minutes: document.getElementById('add_downtime').value || '0',
+    downtime_reason: document.getElementById('add_reason').value,
+    remarks: document.getElementById('add_remarks').value,
+  });
+  fetch('{% url "target_log_create" %}', {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) { location.reload(); }
+      else {
+        errEl.textContent = Object.values(d.errors || {}).flat().join(' ') || 'Error saving entry.';
+        errEl.classList.remove('hidden');
+      }
+    });
+}
+
+// ── Inline editing ─────────────────────────────────────────────
+document.querySelectorAll('#logTable tbody tr[data-id]').forEach(row => {
+  const id = row.dataset.id;
+  row.querySelectorAll('.view-mode').forEach(span => {
+    span.style.cursor = 'pointer';
+    span.addEventListener('click', () => {
+      span.classList.add('hidden');
+      const input = span.parentElement.querySelector('.edit-mode');
+      if (input) { input.classList.remove('hidden'); input.focus(); }
+    });
+  });
+  row.querySelectorAll('.edit-mode').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const field = inp.dataset.field;
+      const value = inp.value;
+      saveInline(id, field, value, inp, row);
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { inp.classList.add('hidden'); inp.previousElementSibling?.classList?.remove('hidden'); }
+      if (e.key === 'Enter') inp.blur();
+    });
+  });
+});
+
+function saveInline(id, field, value, inp, row) {
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF, field, value});
+  fetch(`/production/target-logs/${id}/update/`, {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const span = inp.previousElementSibling || inp.parentElement.querySelector('.view-mode');
+        if (span) { span.textContent = d.display; span.classList.remove('hidden'); }
+        inp.classList.add('hidden');
+        // update point badge
+        const ptCell = row.querySelector('[data-point-cell] .view-mode');
+        if (ptCell && d.point !== undefined) {
+          ptCell.textContent = d.point;
+          ptCell.className = `view-mode inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${d.point == 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+        }
+      } else {
+        alert(d.error || 'Save failed');
+        inp.classList.add('hidden');
+        inp.previousElementSibling?.classList?.remove('hidden');
+      }
+    });
+}
+
+function deleteLog(id, btn) {
+  if (!confirm('Delete this entry?')) return;
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF});
+  fetch(`/production/target-logs/${id}/delete/`, {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => { if (d.ok) btn.closest('tr').remove(); });
+}
+
+// ── Items CRUD ────────────────────────────────────────────────
+function addItem() {
+  const name = document.getElementById('new_item_name').value.trim();
+  const rate = document.getElementById('new_item_rate').value;
+  if (!name || !rate) return;
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF, name, hourly_qty: rate, active: true});
+  fetch('{% url "production_item_create" %}', {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        document.getElementById('new_item_name').value = '';
+        document.getElementById('new_item_rate').value = '';
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 p-2 bg-gray-50 rounded-lg';
+        div.dataset.itemId = d.id;
+        div.innerHTML = `<input type="text" value="${d.name}" class="flex-1 px-2 py-1 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-primary-400 outline-none" onblur="saveItem(${d.id}, this.value, this.parentElement.querySelector('.rate-input').value)">
+          <input type="number" value="${d.hourly_qty}" step="0.01" min="0" class="rate-input w-20 px-2 py-1 border border-gray-200 rounded text-sm text-right focus:ring-1 focus:ring-primary-400 outline-none" onblur="saveItem(${d.id}, this.parentElement.querySelector('input[type=text]').value, this.value)">
+          <span class="text-xs text-gray-400">/hr</span>
+          <button onclick="deleteItem(${d.id}, this)" class="text-red-400 hover:text-red-600 p-1 rounded transition"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+        document.getElementById('item_list').appendChild(div);
+        document.getElementById('no_items_msg')?.remove();
+      } else {
+        const e = document.getElementById('item_error');
+        e.textContent = Object.values(d.errors || {}).flat().join(' ');
+        e.classList.remove('hidden');
+      }
+    });
+}
+
+function saveItem(id, name, rate) {
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF, name, hourly_qty: rate, active: true});
+  fetch(`/production/production-items/${id}/update/`, {method: 'POST', body: data});
+}
+
+function deleteItem(id, btn) {
+  if (!confirm('Delete this item?')) return;
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF});
+  fetch(`/production/production-items/${id}/delete/`, {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => { if (d.ok) btn.closest('[data-item-id]').remove(); else alert(d.error); });
+}
+
+// ── Shift Templates CRUD ──────────────────────────────────────
+function addTemplate() {
+  const name = document.getElementById('new_tpl_name').value.trim();
+  const start = document.getElementById('new_tpl_start').value;
+  const end = document.getElementById('new_tpl_end').value;
+  const midnight = document.getElementById('new_tpl_midnight').checked ? 'true' : '';
+  if (!name || !start || !end) return;
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF, name, start_time: start, end_time: end, crosses_midnight: midnight});
+  fetch('{% url "shift_template_create" %}', {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        document.getElementById('new_tpl_name').value = '';
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm';
+        div.dataset.tplId = d.id;
+        div.innerHTML = `<span class="flex-1 font-medium text-gray-800">${d.name}</span><span class="text-xs text-gray-500">${d.duration_display}</span><button onclick="deleteTemplate(${d.id}, this)" class="text-red-400 hover:text-red-600 p-1 rounded transition"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
+        document.getElementById('tpl_list').appendChild(div);
+        document.getElementById('no_tpl_msg')?.remove();
+      } else {
+        const e = document.getElementById('tpl_error');
+        e.textContent = Object.values(d.errors || {}).flat().join(' ');
+        e.classList.remove('hidden');
+      }
+    });
+}
+
+function deleteTemplate(id, btn) {
+  if (!confirm('Delete this template?')) return;
+  const data = new URLSearchParams({csrfmiddlewaretoken: CSRF});
+  fetch(`/production/shift-templates/${id}/delete/`, {method: 'POST', body: data})
+    .then(r => r.json())
+    .then(d => { if (d.ok) btn.closest('[data-tpl-id]').remove(); else alert(d.error); });
+}
+
+// ── Close modal on backdrop click ─────────────────────────────
+['addModal', 'itemModal', 'shiftTplModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal(id);
+  });
+});
+</script>
+{% endblock %}

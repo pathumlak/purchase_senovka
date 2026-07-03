@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stock Ledger — ERP System{% endblock %}
+{% block page_title %}Stock Ledger{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Stock Ledger</h2>
+      <p class="mt-1 text-sm text-gray-500">Every production addition and bill deduction, per product, with a running balance.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'stock_ledger_export_excel' %}{% if date_from or date_to or product_id or category_id %}?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if product_id %}product={{ product_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}{% endif %}"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Excel
+      </a>
+      <a href="{% url 'stock_ledger_export_pdf' %}{% if date_from or date_to or product_id or category_id %}?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if product_id %}product={{ product_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}{% endif %}"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+        <input type="date" name="date_from" value="{{ date_from }}"
+               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+        <select name="category"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Product</label>
+        <select name="product"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Products</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if product_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}{% if p.size %} ({{ p.size }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+        Filter
+      </button>
+      <a href="{% url 'stock_ledger' %}?date_from=&date_to=" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+        All Time
+      </a>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Showing the current month by default.</p>
+  </form>
+
+  <!-- Per-product ledger blocks -->
+  {% for block in blocks %}
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900">
+          {{ block.product.name }}{% if block.product.size %} <span class="text-gray-400 font-normal">({{ block.product.size }})</span>{% endif %}
+        </h3>
+        <p class="text-xs text-gray-400 mt-0.5">{{ block.product.category.name }} &middot; Current stock: {{ block.product.qty|floatformat:0 }}</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs">
+        {% if block.opening_balance %}<span class="text-gray-500">Opening balance: <strong class="text-gray-700">{{ block.opening_balance|floatformat:0 }}</strong></span>{% endif %}
+        <span class="text-green-600">Added: <strong>+{{ block.total_production|floatformat:0 }}</strong></span>
+        <span class="text-red-600">Sold: <strong>-{{ block.total_sale|floatformat:0 }}</strong></span>
+        <span class="text-blue-600">Closing balance: <strong>{{ block.closing_balance|floatformat:0 }}</strong></span>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-green-600 uppercase tracking-wider">Production</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-red-600 uppercase tracking-wider">Sale</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-blue-600 uppercase tracking-wider">Balance</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Bill No.</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for row in block.rows %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-2.5 whitespace-nowrap font-medium text-gray-700">{{ row.date|date:"d M Y" }}</td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              {% if row.production is not None %}<span class="text-green-600 font-bold">+{{ row.production|floatformat:0 }}</span>{% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap text-gray-500">
+              {% if row.total is not None %}{{ row.total|floatformat:0 }}{% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              {% if row.sale is not None %}<span class="text-red-600 font-bold">-{{ row.sale|floatformat:0 }}</span>{% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              <span class="text-blue-600 font-semibold">{{ row.balance|floatformat:0 }}</span>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap text-gray-700">{{ row.customer|default:"—" }}</td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              {% if row.bill_id %}
+              <a href="{% url 'billing:bill_detail' row.bill_id %}" class="text-primary-700 hover:underline font-medium">{{ row.bill_no }}</a>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-gray-200 p-16 text-center">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+        </svg>
+      </div>
+      <p class="text-sm font-medium text-gray-500">No stock movement found</p>
+      <p class="text-xs text-gray-400">Try widening the date range or clearing the product/category filter.</p>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Pagination (by product — exports always include every product) -->
+  {% if page_obj.has_other_pages %}
+  <div class="bg-white rounded-xl border border-gray-200 px-5 py-4 flex items-center justify-between">
+    <p class="text-xs text-gray-500">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      &middot; {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} with movement
+    </p>
+    <div class="flex gap-1">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+         class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+         class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

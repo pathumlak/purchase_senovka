@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order Print Sheet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    color: #111;
+    background: #fff;
+    padding: 16px;
+  }
+
+  /* ── page header ── */
+  .page-header {
+    text-align: center;
+    border-bottom: 2px solid #111;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+  .page-header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.05em; }
+  .page-header p  { font-size: 9px; color: #555; margin-top: 2px; }
+
+  /* ── order block ── */
+  .order-block {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+
+  .order-header {
+    background: #f3f4f6;
+    border-bottom: 1px solid #ccc;
+    padding: 7px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .order-header .label { font-size: 8.5px; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
+  .order-header .value { font-size: 11.5px; font-weight: 700; color: #111; margin-top: 1px; }
+  .order-header .field { min-width: 120px; }
+
+  /* ── items table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th {
+    padding: 5px 8px;
+    text-align: left;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  th.r, td.r { text-align: right; }
+  td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 10px;
+    vertical-align: middle;
+  }
+  tbody tr:nth-child(even) td { background: #f9fafb; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .issued-cell {
+    width: 90px;
+    border-left: 1px dashed #ccc;
+    background: #fffbeb !important;
+  }
+
+  /* ── no-print toolbar ── */
+  .no-print {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-print {
+    padding: 6px 18px;
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-close {
+    padding: 6px 14px;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .info-text { font-size: 10px; color: #6b7280; }
+
+  /* ── print rules ── */
+  @media print {
+    .no-print { display: none !important; }
+    body { padding: 8px; }
+    .order-block { margin-bottom: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- toolbar (screen only) -->
+<div class="no-print">
+  <button class="btn-print" onclick="window.print()">&#128438; Print</button>
+  <button class="btn-close" onclick="window.close()">Close</button>
+  <span class="info-text">{{ bookings|length }} order{{ bookings|length|pluralize }} &mdash; Generated {{ generated_at|date:"d M Y, H:i" }}</span>
+</div>
+
+<!-- page header -->
+<div class="page-header">
+  <h1>SENOVKA ERP &mdash; Order Issue Sheet</h1>
+  <p>{{ bookings|length }} order{{ bookings|length|pluralize }} &mdash; Printed {{ generated_at|date:"d M Y, H:i" }}</p>
+</div>
+
+{% for booking in bookings %}
+<div class="order-block">
+
+  <!-- order meta -->
+  <div class="order-header">
+    <div class="field">
+      <div class="label">Order No.</div>
+      <div class="value">{{ booking.booking_number }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Date</div>
+      <div class="value">{{ booking.booking_date|date:"d M Y" }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Customer</div>
+      <div class="value">{{ booking.customer.name }}</div>
+    </div>
+    {% if booking.order_sending_date %}
+    <div class="field">
+      <div class="label">Send Date</div>
+      <div class="value">{{ booking.order_sending_date|date:"d M Y" }}</div>
+    </div>
+    {% endif %}
+    <div class="field">
+      <div class="label">Status</div>
+      <div class="value">{{ booking.get_status_display }}</div>
+    </div>
+  </div>
+
+  <!-- items -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:30px">#</th>
+        <th>Item / Product</th>
+        <th class="r" style="width:80px">Order Qty</th>
+        <th class="r issued-cell">Issued Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in booking.items.all %}
+      <tr>
+        <td style="color:#9ca3af;">{{ forloop.counter }}</td>
+        <td>
+          <strong>{{ item.product.name }}</strong>
+          {% if item.product.size %}<span style="color:#9ca3af;font-size:9px;"> ({{ item.product.size }})</span>{% endif %}
+          {% if item.product.category %}<span style="color:#9ca3af;font-size:8.5px;"> &mdash; {{ item.product.category.name }}</span>{% endif %}
+        </td>
+        <td class="r" style="font-weight:700;">{{ item.quantity|floatformat:0 }}</td>
+        <td class="r issued-cell">&nbsp;</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" style="text-align:center;color:#9ca3af;padding:10px;">No items.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% empty %}
+<p style="text-align:center;color:#9ca3af;padding:40px;">No orders selected.</p>
+{% endfor %}
+
+</body>
+</html>

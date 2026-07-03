@@ -1,0 +1,608 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daily Machine Running - ERP System{% endblock %}
+{% block page_title %}Daily Machine Running{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+    <!-- ── Header ── -->
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Daily Running Machine</h2>
+            <p class="mt-0.5 text-sm text-gray-500">Track daily machine production entries</p>
+        </div>
+        <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Entry
+        </button>
+    </div>
+
+    <!-- ── Stats ── -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="p-2 bg-primary-50 rounded-lg">
+                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Total Entries</p>
+                <p class="text-xl font-bold text-gray-900">{{ total_machine_runs }}</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="p-2 bg-accent-50 rounded-lg">
+                <svg class="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Filtered Entries</p>
+                <p class="text-xl font-bold text-gray-900">{{ filtered_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Machines + Work Assignments side by side ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Machines Panel -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Machines</h3>
+                <button onclick="openAddMachineModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add
+                </button>
+            </div>
+            {% if machines %}
+            <div class="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                {% for machine in machines %}
+                <div class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 machine-list-row"
+                     data-machine-id="{{ machine.id }}"
+                     data-machine-name="{{ machine.name|escapejs }}"
+                     data-machine-description="{{ machine.description|default_if_none:''|escapejs }}">
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span class="flex-1 text-sm text-gray-700 truncate">{{ machine.name }}</span>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        <button onclick="openEditMachineModal(this)" class="p-1 text-gray-400 hover:text-amber-600 rounded transition" title="Edit">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button onclick="openDeleteMachineModal(this)" class="p-1 text-gray-400 hover:text-red-600 rounded transition" title="Delete">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-4 py-8 text-center text-sm text-gray-400">No machines added yet.</div>
+            {% endif %}
+        </div>
+
+        <!-- Work Assignments Panel -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-800">Work Assignments</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">One shared assignment per day for all machines</p>
+                </div>
+                <button onclick="openWorkAssignmentModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add
+                </button>
+            </div>
+            {% if work_assignments %}
+            <div class="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                {% for wa in work_assignments %}
+                <div class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 work-assignment-row"
+                     data-wa-id="{{ wa.id }}"
+                     data-wa-date="{{ wa.production_date|date:'Y-m-d' }}"
+                     data-wa-crusher="{{ wa.crusher_operator|escapejs }}"
+                     data-wa-mixer="{{ wa.material_mixer|escapejs }}"
+                     data-wa-extra="{{ wa.extra_work_employee|escapejs }}">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-700">{{ wa.production_date|date:"d M Y" }}</p>
+                        <div class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                            {% if wa.crusher_operator %}<span>Crusher: <span class="text-gray-700">{{ wa.crusher_operator }}</span></span>{% endif %}
+                            {% if wa.material_mixer %}<span>Mixer: <span class="text-gray-700">{{ wa.material_mixer }}</span></span>{% endif %}
+                            {% if wa.extra_work_employee %}<span>Extra: <span class="text-gray-700">{{ wa.extra_work_employee }}</span></span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        <button onclick="openEditWorkAssignmentModal(this)" class="p-1 text-gray-400 hover:text-amber-600 rounded transition" title="Edit">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button onclick="openDeleteWorkAssignmentModal(this)" class="p-1 text-gray-400 hover:text-red-600 rounded transition" title="Delete">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-4 py-8 text-center text-sm text-gray-400">No work assignments yet. Add one above.</div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ── Filters ── -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <h3 class="text-sm font-semibold text-gray-800">Filter Entries</h3>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'daily_machine_export_pdf' %}{% if query_string %}?{{ query_string }}{% endif %}" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition">PDF</a>
+                <a href="{% url 'daily_machine_export_excel' %}{% if query_string %}?{{ query_string }}{% endif %}" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition">Excel</a>
+            </div>
+        </div>
+        <form method="get" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 items-end">
+            <div class="col-span-2 md:col-span-4 xl:col-span-2">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+                <input name="q" type="text" value="{{ filters.q }}" placeholder="Machine, item, or operator…" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Month</label>
+                <input name="month" type="month" value="{{ filters.month }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Date From</label>
+                <input name="start_date" type="date" value="{{ filters.start_date_raw }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Date To</label>
+                <input name="end_date" type="date" value="{{ filters.end_date_raw }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 px-3 py-2 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 transition">Apply</button>
+                <a href="{% url 'daily_machine_list' %}?month=&start_date=&end_date=" class="flex-1 px-3 py-2 border border-gray-300 text-xs font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition text-center">Reset</a>
+            </div>
+        </form>
+        <p class="text-xs text-gray-400 mt-2">Showing the current month by default — <a href="{% url 'daily_machine_list' %}?month=&start_date=&end_date=" class="text-primary-600 hover:underline font-medium">view all time</a>.</p>
+    </div>
+
+    <!-- ── Entries Table ── -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Machine</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Operator</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for run in machine_runs %}
+                    <tr class="hover:bg-gray-50 machine-row {% if run.machine_not_working %}bg-red-50{% endif %}"
+                        data-id="{{ run.id }}"
+                        data-production-date="{{ run.production_date|date:'Y-m-d' }}"
+                        data-display-date="{{ run.production_date|date:'d M Y' }}"
+                        data-machine-name="{{ run.machine_name|escapejs }}"
+                        data-machine-not-working="{{ run.machine_not_working|yesno:'true,false' }}"
+                        data-item-id="{{ run.item.id|default:'' }}"
+                        data-item-name="{{ run.item.name|default:''|escapejs }}"
+                        data-machine-operator="{{ run.machine_operator|escapejs }}"
+                        data-notes="{{ run.notes|default_if_none:''|escapejs }}">
+                        <td class="px-4 py-3 text-sm font-medium text-gray-800 whitespace-nowrap">{{ run.production_date|date:"d M Y" }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            <div class="flex items-center gap-1.5">
+                                {{ run.machine_name }}
+                                {% if run.machine_not_working %}<span class="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Not Working</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            {% if run.machine_not_working %}<span class="text-gray-400">—</span>{% else %}{{ run.item.name }}{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            {% if run.machine_not_working %}<span class="text-gray-400">—</span>{% else %}{{ run.machine_operator }}{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">{{ run.notes|default:"" }}</td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="openEditModal(this)" class="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="openDeleteModal(this)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2z"/></svg>
+                                <p class="text-sm font-medium text-gray-700">No entries found</p>
+                                <p class="text-xs text-gray-400 mt-1">Add the first daily machine entry or adjust your filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &mdash; {{ filtered_count }} entries</p>
+            <div class="flex items-center gap-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">&laquo; Prev</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 text-xs font-semibold text-gray-300">&laquo; Prev</span>
+                {% endif %}
+
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                    <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-600 text-white">{{ page_num }}</span>
+                    {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+                    <a href="?page={{ page_num }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next &raquo;</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 text-xs font-semibold text-gray-300">Next &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Add / Edit Machine Entry Modal ── -->
+<div id="form-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <h3 id="form-modal-title" class="text-base font-semibold text-gray-900">Add Daily Entry</h3>
+            <button onclick="closeModal('form-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="daily-machine-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="p-5 space-y-4">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="production_date" id="modal-production-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Machine <span class="text-red-500">*</span></label>
+                        <input type="text" name="machine_name" id="modal-machine-name" required placeholder="Machine name" list="machine-name-datalist" autocomplete="off" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        <datalist id="machine-name-datalist">
+                            {% for machine in machines %}<option value="{{ machine.name }}">{% endfor %}
+                        </datalist>
+                    </div>
+                </div>
+
+                <label class="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer select-none">
+                    <input type="checkbox" name="machine_not_working" id="modal-not-working" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" onchange="toggleNotWorking(this)">
+                    <span class="text-sm text-gray-700">Machine was <span class="text-red-600 font-semibold">not working</span> this day</span>
+                </label>
+
+                <div id="working-fields" class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Item <span class="text-red-500">*</span></label>
+                        <select name="item" id="modal-item" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white">
+                            <option value="">Select item…</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }}{% if product.category %} ({{ product.category.name }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Operator <span class="text-red-500">*</span></label>
+                        <input type="text" name="machine_operator" id="modal-operator" required placeholder="Operator name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea name="notes" id="modal-notes" rows="2" placeholder="Optional…" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('form-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="form-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Save Entry</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Work Assignment Modal ── -->
+<div id="work-assignment-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <h3 id="wa-modal-title" class="text-base font-semibold text-gray-900">Work Assignment</h3>
+            <button onclick="closeModal('work-assignment-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'work_assignment_save' %}">
+            {% csrf_token %}
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="production_date" id="wa-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Crusher Operator</label>
+                    <input type="text" name="crusher_operator" id="wa-crusher" placeholder="Employee name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Material Mixer</label>
+                    <input type="text" name="material_mixer" id="wa-mixer" placeholder="Employee name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Extra Work</label>
+                    <input type="text" name="extra_work_employee" id="wa-extra" placeholder="Employee name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('work-assignment-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Delete Work Assignment Modal ── -->
+<div id="delete-wa-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900 mb-1">Delete Work Assignment?</h3>
+            <p class="text-sm text-gray-500">Assignment for <span id="delete-wa-label" class="font-medium text-gray-700"></span> will be removed.</p>
+        </div>
+        <form id="delete-wa-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-wa-modal')" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Add Machine Modal ── -->
+<div id="add-machine-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Add Machine</h3>
+            <button onclick="closeModal('add-machine-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'machine_create' %}">
+            {% csrf_token %}
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Machine Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" id="add-machine-name" required placeholder="e.g. Mixer-01" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" id="add-machine-description" rows="2" placeholder="Optional" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('add-machine-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Add Machine</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Edit Machine Modal ── -->
+<div id="edit-machine-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Edit Machine</h3>
+            <button onclick="closeModal('edit-machine-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="edit-machine-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Machine Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" id="edit-machine-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" id="edit-machine-description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('edit-machine-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Delete Machine Modal ── -->
+<div id="delete-machine-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900 mb-1">Delete Machine?</h3>
+            <p class="text-sm text-gray-500">"<span id="delete-machine-label" class="font-medium text-gray-700"></span>" will be removed.</p>
+        </div>
+        <form id="delete-machine-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-machine-modal')" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Delete Entry Modal ── -->
+<div id="delete-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900 mb-1">Delete Entry?</h3>
+            <p class="text-sm text-gray-500">Machine "<span id="delete-machine-name" class="font-medium text-gray-700"></span>" entry will be removed.</p>
+        </div>
+        <form id="delete-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-5 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-modal')" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        ['form-modal','delete-modal','add-machine-modal','edit-machine-modal','delete-machine-modal','work-assignment-modal','delete-wa-modal'].forEach(closeModal);
+    }
+});
+
+function toggleNotWorking(cb) {
+    const fields  = document.getElementById('working-fields');
+    const item    = document.getElementById('modal-item');
+    const op      = document.getElementById('modal-operator');
+    if (cb.checked) {
+        fields.style.display = 'none';
+        item.removeAttribute('required');
+        op.removeAttribute('required');
+    } else {
+        fields.style.display = '';
+        item.setAttribute('required','required');
+        op.setAttribute('required','required');
+    }
+}
+
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function openCreateModal() {
+    document.getElementById('form-modal-title').textContent = 'Add Daily Entry';
+    document.getElementById('form-submit-btn').textContent  = 'Save Entry';
+    document.getElementById('daily-machine-form').action    = "{% url 'daily_machine_create' %}";
+    document.getElementById('modal-production-date').value  = todayStr();
+    document.getElementById('modal-machine-name').value     = '';
+    document.getElementById('modal-not-working').checked    = false;
+    toggleNotWorking(document.getElementById('modal-not-working'));
+    document.getElementById('modal-item').value     = '';
+    document.getElementById('modal-operator').value = '';
+    document.getElementById('modal-notes').value    = '';
+    openModal('form-modal');
+    setTimeout(() => document.getElementById('modal-machine-name').focus(), 100);
+}
+
+function openEditModal(btn) {
+    const row = btn.closest('.machine-row');
+    if (!row) return;
+    document.getElementById('form-modal-title').textContent = 'Edit Daily Entry';
+    document.getElementById('form-submit-btn').textContent  = 'Update Entry';
+    document.getElementById('daily-machine-form').action    = `/production/daily-machines/${row.dataset.id}/edit/`;
+    document.getElementById('modal-production-date').value  = row.dataset.productionDate;
+    document.getElementById('modal-machine-name').value     = row.dataset.machineName;
+    const notWorking = row.dataset.machineNotWorking === 'true';
+    document.getElementById('modal-not-working').checked    = notWorking;
+    toggleNotWorking(document.getElementById('modal-not-working'));
+    document.getElementById('modal-item').value     = row.dataset.itemId || '';
+    document.getElementById('modal-operator').value = row.dataset.machineOperator;
+    document.getElementById('modal-notes').value    = row.dataset.notes || '';
+    openModal('form-modal');
+}
+
+function openDeleteModal(btn) {
+    const row = btn.closest('.machine-row');
+    if (!row) return;
+    document.getElementById('delete-machine-name').textContent = row.dataset.machineName;
+    document.getElementById('delete-form').action = `/production/daily-machines/${row.dataset.id}/delete/`;
+    openModal('delete-modal');
+}
+
+// Work Assignment
+function openWorkAssignmentModal() {
+    document.getElementById('wa-modal-title').textContent = 'Add Work Assignment';
+    document.getElementById('wa-date').value    = todayStr();
+    document.getElementById('wa-crusher').value = '';
+    document.getElementById('wa-mixer').value   = '';
+    document.getElementById('wa-extra').value   = '';
+    openModal('work-assignment-modal');
+    setTimeout(() => document.getElementById('wa-date').focus(), 100);
+}
+
+function openEditWorkAssignmentModal(btn) {
+    const row = btn.closest('.work-assignment-row');
+    if (!row) return;
+    document.getElementById('wa-modal-title').textContent = 'Edit Work Assignment';
+    document.getElementById('wa-date').value    = row.dataset.waDate;
+    document.getElementById('wa-crusher').value = row.dataset.waCrusher;
+    document.getElementById('wa-mixer').value   = row.dataset.waMixer;
+    document.getElementById('wa-extra').value   = row.dataset.waExtra;
+    openModal('work-assignment-modal');
+}
+
+function openDeleteWorkAssignmentModal(btn) {
+    const row = btn.closest('.work-assignment-row');
+    if (!row) return;
+    const date = row.querySelector('p')?.textContent || row.dataset.waDate;
+    document.getElementById('delete-wa-label').textContent = date;
+    document.getElementById('delete-wa-form').action = `/production/work-assignments/${row.dataset.waId}/delete/`;
+    openModal('delete-wa-modal');
+}
+
+// Machine modals
+function openAddMachineModal() {
+    document.getElementById('add-machine-name').value        = '';
+    document.getElementById('add-machine-description').value = '';
+    openModal('add-machine-modal');
+    setTimeout(() => document.getElementById('add-machine-name').focus(), 100);
+}
+
+function openEditMachineModal(btn) {
+    const row = btn.closest('.machine-list-row');
+    if (!row) return;
+    document.getElementById('edit-machine-name').value        = row.dataset.machineName;
+    document.getElementById('edit-machine-description').value = row.dataset.machineDescription;
+    document.getElementById('edit-machine-form').action       = `/production/machines/${row.dataset.machineId}/edit/`;
+    openModal('edit-machine-modal');
+    setTimeout(() => document.getElementById('edit-machine-name').focus(), 100);
+}
+
+function openDeleteMachineModal(btn) {
+    const row = btn.closest('.machine-list-row');
+    if (!row) return;
+    document.getElementById('delete-machine-label').textContent = row.dataset.machineName;
+    document.getElementById('delete-machine-form').action = `/production/machines/${row.dataset.machineId}/delete/`;
+    openModal('delete-machine-modal');
+}
+</script>
+{% endblock %}

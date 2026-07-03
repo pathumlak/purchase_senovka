@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customer Pricing - ERP System{% endblock %}
+{% block page_title %}Customer Product Pricing{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Customer-wise Pricing</h2>
+            <p class="mt-1 text-sm text-gray-500">Set custom product prices per customer. Default base price is used when no custom price is set.</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'customer_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Customers
+            </a>
+            <a href="{% url 'bulk_pricing_view' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10"/></svg>
+                Bulk Pricing
+            </a>
+            <!-- <button onclick="openCreatePriceModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Price
+            </button> -->
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Custom Prices</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_prices }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-50 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Customers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ customers|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-50 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Products</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ products|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search + Export bar -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
+        <form method="get" action="" class="flex-1 flex items-center gap-2 min-w-0">
+            <div class="relative flex-1 min-w-0">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                </svg>
+                <input type="text" name="q" value="{{ q }}"
+                       placeholder="Search by customer or product name…"
+                       class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+            </div>
+            <button type="submit"
+                    class="px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition whitespace-nowrap">
+                Search
+            </button>
+            {% if q %}
+            <a href="{% url 'customer_pricing_list' %}"
+               class="px-4 py-2.5 border border-gray-300 bg-white text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition whitespace-nowrap">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+
+        <!-- Export buttons -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <a href="{% url 'pricing_export_excel' %}{% if q %}?q={{ q }}{% endif %}"
+               class="flex items-center gap-1.5 px-3 py-2.5 border border-green-200 bg-green-50 text-green-700 text-xs font-medium rounded-lg hover:bg-green-100 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Excel
+            </a>
+            <a href="{% url 'pricing_export_pdf' %}{% if q %}?q={{ q }}{% endif %}"
+               class="flex items-center gap-1.5 px-3 py-2.5 border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium rounded-lg hover:bg-rose-100 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Pricing Table -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <!-- Table header bar -->
+        <div class="px-6 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50">
+            <p class="text-sm text-gray-600">
+                {% if q %}
+                    Showing <span class="font-semibold text-gray-900">{{ filtered_count }}</span> result{{ filtered_count|pluralize }}
+                    for <span class="font-semibold text-primary-700">"{{ q }}"</span>
+                {% else %}
+                    <span class="font-semibold text-gray-900">{{ filtered_count }}</span> price record{{ filtered_count|pluralize }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for price in prices %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold">
+                                    {{ price.customer.name|first|upper }}
+                                </div>
+                                <span class="text-sm font-semibold text-gray-900">{{ price.customer.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ price.product.name }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{{ price.product.category.name }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-sm font-bold text-gray-900">{{ price.unit_price }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="openEditPriceModal({{ price.id }}, {{ price.customer.id }}, {{ price.product.id }}, '{{ price.unit_price }}')"
+                                    class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="openDeletePriceModal({{ price.id }}, '{{ price.customer.name|escapejs }}', '{{ price.product.name|escapejs }}')"
+                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                </div>
+                                <p class="text-sm font-medium text-gray-900">No custom prices set</p>
+                                <p class="text-sm text-gray-500 mt-1">Add customer-specific product prices to override base prices.</p>
+                                <button onclick="openCreatePriceModal()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Add Price
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        {% with base_qs=q|urlencode %}
+        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+            <div class="flex items-center gap-1.5">
+                {% if page_obj.has_previous %}
+                <a href="?{% if q %}q={{ base_qs }}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Previous</span>
+                {% endif %}
+
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                    <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ page_num }}</span>
+                    {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+                    <a href="?{% if q %}q={{ base_qs }}&{% endif %}page={{ page_num }}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?{% if q %}q={{ base_qs }}&{% endif %}page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Next</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create/Edit Price Modal -->
+<div id="price-form-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 id="price-form-title" class="text-lg font-semibold text-gray-900">Add Custom Price</h3>
+            <button onclick="closeModal('price-form-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="price-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="p-6 space-y-5">
+                <div>
+                    <label for="price-customer" class="block text-sm font-medium text-gray-700 mb-1.5">Customer <span class="text-red-500">*</span></label>
+                    <select name="customer" id="price-customer" required
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                        <option value="">Select customer...</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="price-product" class="block text-sm font-medium text-gray-700 mb-1.5">Product <span class="text-red-500">*</span></label>
+                    <select name="product" id="price-product" required
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                        <option value="">Select product...</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} ({{ product.category.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="price-unit" class="block text-sm font-medium text-gray-700 mb-1.5">Unit Price <span class="text-red-500">*</span></label>
+                    <input type="number" name="unit_price" id="price-unit" step="0.01" min="0" required
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400"
+                        placeholder="0.00">
+                
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('price-form-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="price-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition">Save Price</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Price Modal -->
+<div id="delete-price-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Custom Price</h3>
+            <p class="text-sm text-gray-500">Remove the price for "<span id="delete-price-info" class="font-medium text-gray-700"></span>"? This action cannot be undone.</p>
+        </div>
+        <form id="delete-price-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-price-modal')" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+document.querySelectorAll('.modal-backdrop').forEach(el => {
+    el.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') ['price-form-modal', 'delete-price-modal'].forEach(id => closeModal(id));
+});
+
+
+
+function openCreatePriceModal() {
+    document.getElementById('price-form-title').textContent = 'Add Custom Price';
+    document.getElementById('price-submit-btn').textContent = 'Save Price';
+    document.getElementById('price-customer').value = '';
+    document.getElementById('price-product').value = '';
+    document.getElementById('price-unit').value = '';
+    document.getElementById('base-price-hint').textContent = '';
+    document.getElementById('price-customer').disabled = false;
+    document.getElementById('price-product').disabled = false;
+    document.getElementById('price-form').action = "{% url 'pricing_create' %}";
+    openModal('price-form-modal');
+}
+
+function openEditPriceModal(id, customerId, productId, unitPrice) {
+    document.getElementById('price-form-title').textContent = 'Edit Custom Price';
+    document.getElementById('price-submit-btn').textContent = 'Update Price';
+    document.getElementById('price-customer').value = customerId;
+    document.getElementById('price-product').value = productId;
+    document.getElementById('price-unit').value = unitPrice;
+
+    document.getElementById('price-customer').disabled = false;
+    document.getElementById('price-product').disabled = false;
+    document.getElementById('price-form').action = `/customers/pricing/${id}/edit/`;
+    openModal('price-form-modal');
+}
+
+function openDeletePriceModal(id, customerName, productName) {
+    document.getElementById('delete-price-info').textContent = customerName + ' — ' + productName;
+    document.getElementById('delete-price-form').action = `/customers/pricing/${id}/delete/`;
+    openModal('delete-price-modal');
+}
+</script>
+{% endblock %}

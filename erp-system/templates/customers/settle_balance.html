@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}Settle Balance — {{ customer.name }}{% endblock %}
+{% block page_title %}Settle Customer Balance{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <a href="{% url 'customer_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    Back to Customers
+  </a>
+
+  <!-- Customer summary -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div class="flex items-start justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">{{ customer.name }}</h2>
+        <p class="text-sm text-gray-500">{{ customer.address|default:"—" }}</p>
+      </div>
+      <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Outstanding</span>
+    </div>
+    <div class="grid grid-cols-2 gap-4 text-center">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-xs text-red-600 uppercase tracking-wide font-medium">Outstanding Balance</p>
+        <p class="text-2xl font-bold text-red-700 mt-1">Rs. {{ outstanding|floatformat:2 }}</p>
+        <p class="text-xs text-red-500 mt-0.5">Customer owes this amount</p>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-4">
+        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">After Full Settlement</p>
+        <p class="text-2xl font-bold text-green-600 mt-1">Rs. 0.00</p>
+        <p class="text-xs text-gray-400 mt-0.5">Balance cleared</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settlement form -->
+  <form method="POST" id="settle-form" novalidate>
+    {% csrf_token %}
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Payment Method
+        </h3>
+      </div>
+      <div class="p-6 space-y-5">
+
+        <!-- Method selection -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {% for val, label in method_choices %}
+          <label class="relative cursor-pointer">
+            <input type="radio" name="settlement_method" value="{{ val }}" class="sr-only peer" {% if forloop.first %}checked{% endif %}>
+            <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 border-2 border-gray-200 rounded-xl p-3 text-center transition hover:border-gray-300">
+              <span class="text-sm font-medium">{{ label }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+
+        <!-- Amount summary -->
+        <div id="effective-display" class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">Outstanding balance</span><span class="font-semibold text-red-600">Rs. {{ outstanding|floatformat:2 }}</span></div>
+          <div class="flex justify-between border-t pt-1 mt-1"><span class="text-gray-600 font-medium">Amount entering</span><span class="font-bold text-emerald-700" id="disp-total">Rs. 0.00</span></div>
+        </div>
+
+        <!-- Cash input -->
+        <div id="s-cash">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Cash Amount (Rs.)</label>
+          <input type="number" name="cash_amount" id="cash-amt" step="0.01" min="0" placeholder="0.00"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+          <label class="inline-flex items-center gap-2.5 cursor-pointer select-none mt-3 px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition w-full">
+            <input type="checkbox" name="cash_is_senovka_transfer" value="1"
+                   class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+            <div>
+              <span class="block text-sm font-medium text-gray-700">Senovka Account Transfer</span>
+              <span class="block text-xs text-gray-400 mt-0.5">Customer transferred to Senovka bank account</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Cheque section -->
+        <div id="s-cheque" class="hidden space-y-3">
+          <div id="cheque-list" class="space-y-3"></div>
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="addChequeRow()"
+                    class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add another cheque
+            </button>
+            <p class="text-xs text-gray-500">Total cheques: <span id="cheque-total-display" class="font-semibold text-gray-700">Rs. 0.00</span></p>
+          </div>
+          <input type="hidden" name="cheques_json" id="f-cheques-json">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pb-4 mt-6">
+      <a href="{% url 'customer_list' %}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
+      <button type="submit" class="px-6 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition shadow-sm">
+        Record Settlement
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const OUTSTANDING   = {{ outstanding }};
+const TODAY         = "{{ today }}";
+const CUSTOMER_NAME = "{{ customer.name|escapejs }}";
+
+const methodChoices = {
+  FULL_CASH:      { cash: true,  cheque: false },
+  FULL_CHEQUE:    { cash: false, cheque: true  },
+  PARTIAL_CASH:   { cash: true,  cheque: false },
+  PARTIAL_CHEQUE: { cash: false, cheque: true  },
+  MIXED:          { cash: true,  cheque: true  },
+};
+
+// ── Cheque rows (multi-cheque support) ───────────────────────────────────────
+let _chequeRowSeq = 0;
+
+function chequeRowTemplate(seq, prefill) {
+  prefill = prefill || {};
+  return `
+  <div class="cheque-row border border-gray-200 rounded-lg p-4 relative" data-seq="${seq}">
+    <button type="button" onclick="removeChequeRow(${seq})" title="Remove cheque"
+            class="cheque-row-remove absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Cheque Amount (Rs.)</label>
+        <input type="number" class="chq-amount w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" step="0.01" min="0" placeholder="0.00" value="${prefill.amount || ''}" oninput="recalc()">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Customer Name on Cheque</label>
+        <input type="text" class="chq-customer-name w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" placeholder="Name" value="${prefill.customer_name || ''}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Cheque Number</label>
+        <input type="text" class="chq-number w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" placeholder="Cheque #">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Bank Name</label>
+        <input type="text" class="chq-bank w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" placeholder="Bank">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Branch</label>
+        <input type="text" class="chq-branch w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" placeholder="Branch">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Account Number</label>
+        <input type="text" class="chq-account w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" placeholder="Account #">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Received Date</label>
+        <input type="date" class="chq-received w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition" value="${TODAY}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Maturity Date</label>
+        <input type="date" class="chq-maturity w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+      </div>
+    </div>
+  </div>`;
+}
+
+function addChequeRow(prefill) {
+  _chequeRowSeq++;
+  prefill = prefill || {};
+  if (!prefill.customer_name) prefill.customer_name = CUSTOMER_NAME;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = chequeRowTemplate(_chequeRowSeq, prefill);
+  document.getElementById('cheque-list').appendChild(wrap.firstElementChild);
+  updateChequeRemoveButtons();
+  recalc();
+}
+
+function removeChequeRow(seq) {
+  const row = document.querySelector(`.cheque-row[data-seq="${seq}"]`);
+  if (row) row.remove();
+  updateChequeRemoveButtons();
+  recalc();
+}
+
+function updateChequeRemoveButtons() {
+  const rows = document.querySelectorAll('.cheque-row');
+  rows.forEach(r => r.querySelector('.cheque-row-remove').classList.toggle('hidden', rows.length <= 1));
+}
+
+function chequeRowsTotal() {
+  let total = 0;
+  document.querySelectorAll('.cheque-row .chq-amount').forEach(inp => total += parseFloat(inp.value) || 0);
+  return total;
+}
+
+function collectChequeRows() {
+  const rows = [];
+  document.querySelectorAll('.cheque-row').forEach(r => {
+    const amount = parseFloat(r.querySelector('.chq-amount').value) || 0;
+    if (amount <= 0) return;
+    rows.push({
+      amount:         amount,
+      customer_name:  r.querySelector('.chq-customer-name').value.trim(),
+      cheque_number:  r.querySelector('.chq-number').value.trim(),
+      bank_name:      r.querySelector('.chq-bank').value.trim(),
+      branch_name:    r.querySelector('.chq-branch').value.trim(),
+      account_number: r.querySelector('.chq-account').value.trim(),
+      received_date:  r.querySelector('.chq-received').value,
+      maturity_date:  r.querySelector('.chq-maturity').value,
+    });
+  });
+  return rows;
+}
+
+function recalc() {
+  const method = document.querySelector('input[name="settlement_method"]:checked')?.value || '';
+  const cfg    = methodChoices[method] || { cash: true, cheque: false };
+
+  document.getElementById('s-cash').classList.toggle('hidden', !cfg.cash);
+  document.getElementById('s-cheque').classList.toggle('hidden', !cfg.cheque);
+
+  const cash   = cfg.cash   ? (parseFloat(document.getElementById('cash-amt')?.value)  || 0) : 0;
+  const cheque = cfg.cheque ? chequeRowsTotal() : 0;
+  const total  = cash + cheque;
+  document.getElementById('disp-total').textContent = 'Rs. ' + fmt(total);
+  const chqDisp = document.getElementById('cheque-total-display');
+  if (chqDisp) chqDisp.textContent = 'Rs. ' + fmt(cheque);
+}
+
+document.querySelectorAll('input[name="settlement_method"]').forEach(r => r.addEventListener('change', recalc));
+document.getElementById('cash-amt')?.addEventListener('input', recalc);
+
+addChequeRow();
+recalc();
+
+document.getElementById('settle-form').addEventListener('submit', function (e) {
+  const method  = document.querySelector('input[name="settlement_method"]:checked')?.value || '';
+  const showChq = (methodChoices[method] || {}).cheque;
+  if (showChq) {
+    for (const row of document.querySelectorAll('.cheque-row')) {
+      const amount = parseFloat(row.querySelector('.chq-amount').value) || 0;
+      if (amount <= 0) continue;
+      if (!row.querySelector('.chq-number').value.trim() || !row.querySelector('.chq-bank').value.trim()) {
+        alert('Each cheque needs a cheque number and bank name.');
+        e.preventDefault();
+        return;
+      }
+    }
+    document.getElementById('f-cheques-json').value = JSON.stringify(collectChequeRows());
+  }
+});
+
+function fmt(n) {
+  return parseFloat(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
+{% endblock %}

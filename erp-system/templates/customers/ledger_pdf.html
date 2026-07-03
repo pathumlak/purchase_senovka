@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 20px; }
+  h1   { font-size: 15px; margin: 0 0 2px; }
+  h2   { font-size: 12px; margin: 0 0 6px; color: #1d4ed8; }
+  .meta { font-size: 8.5px; color: #666; margin-bottom: 12px; }
+  .filters { font-size: 8.5px; color: #444; margin-bottom: 10px; background: #f5f5f5; padding: 5px 8px; border-radius: 3px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 14px; }
+  .sum-box { border: 1px solid #ddd; border-radius: 4px; padding: 6px 12px; }
+  .sum-box .lbl { font-size: 7.5px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sum-box .val { font-size: 12px; font-weight: bold; margin-top: 1px; }
+  .val-blue { color: #1d4ed8; }
+  .val-red  { color: #dc2626; }
+  .val-green{ color: #16a34a; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th { padding: 5px 6px; text-align: left; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  th.r, td.r { text-align: right; }
+  td { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; font-size: 8.5px; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .badge { padding: 1px 5px; border-radius: 3px; font-size: 7.5px; font-weight: 600; }
+  .badge-red    { background: #fee2e2; color: #b91c1c; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-amber  { background: #fef3c7; color: #92400e; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-gray   { background: #f3f4f6; color: #374151; }
+  tfoot td { font-weight: bold; background: #eff6ff; border-top: 2px solid #1d4ed8; font-size: 9px; }
+  .dr { color: #dc2626; font-weight: 600; }
+  .cr { color: #16a34a; font-weight: 600; }
+  .bal-pos { color: #16a34a; font-weight: 700; }
+  .bal-neg { color: #dc2626; font-weight: 700; }
+  .bal-zero{ color: #9ca3af; }
+  .footer { margin-top: 16px; font-size: 7.5px; color: #aaa; text-align: right; }
+</style>
+</head>
+<body>
+
+<h1>SENOVKA ERP — Customer Ledger</h1>
+<h2>{{ customer.name }}</h2>
+<p class="meta">
+  Generated: {{ generated_at|date:"d M Y H:i" }}
+  {% if customer.address %} &nbsp;|&nbsp; {{ customer.address }}{% endif %}
+</p>
+
+{% if date_from or date_to or ttype %}
+<div class="filters">
+  <strong>Filters:</strong>
+  {% if date_from %}From: {{ date_from }}{% endif %}
+  {% if date_to %} &nbsp;To: {{ date_to }}{% endif %}
+  {% if ttype %} &nbsp;Type: {{ ttype }}{% endif %}
+</div>
+{% endif %}
+
+<div class="summary">
+  <div class="sum-box">
+    <div class="lbl">Current Balance</div>
+    <div class="val {% if customer.balance > 0 %}val-green{% elif customer.balance < 0 %}val-red{% else %}val-blue{% endif %}">
+      Rs. {{ customer.balance|floatformat:2 }}
+      {% if customer.balance > 0 %} (CR){% elif customer.balance < 0 %} (DR){% endif %}
+    </div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Debit (DR)</div>
+    <div class="val val-red">Rs. {{ total_debit|floatformat:2 }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Credit (CR)</div>
+    <div class="val val-green">Rs. {{ total_credit|floatformat:2 }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Records</div>
+    <div class="val val-blue">{{ entries|length }}</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Bill No.</th>
+      <th>Description</th>
+      <th class="r">Debit (DR)</th>
+      <th class="r">Credit (CR)</th>
+      <th class="r">Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ e.date|date:"d-m-Y" }}</td>
+      <td><strong>{{ e.bill_number|default:"—" }}</strong></td>
+      <td>
+        {% if e.transaction_type == 'SALE' %}
+          <span class="badge badge-red">Sale</span>
+        {% elif e.transaction_type == 'SALE_CASH' %}
+          <span class="badge badge-blue">Cash Sale</span>
+        {% elif e.transaction_type == 'SALE_PARTIAL' %}
+          <span class="badge badge-amber">Partial</span>
+        {% elif e.transaction_type == 'PAYMENT_CASH' %}
+          <span class="badge badge-green">Cash</span>
+        {% elif e.transaction_type == 'PAYMENT_CHEQUE' %}
+          <span class="badge badge-green">Cheque</span>
+        {% elif e.transaction_type == 'BALANCE_USED' %}
+          <span class="badge badge-purple">Bal. Used</span>
+        {% elif e.transaction_type == 'OVERPAYMENT' %}
+          <span class="badge badge-green">Overpay</span>
+        {% elif e.transaction_type == 'BILL_CANCELLED' %}
+          <span class="badge badge-gray">Cancelled</span>
+        {% elif e.transaction_type == 'CHEQUE_BOUNCED' %}
+          <span class="badge badge-red">Bounced</span>
+        {% elif e.transaction_type == 'CHEQUE_CLEARED' %}
+          <span class="badge badge-green">Cleared</span>
+        {% elif e.transaction_type == 'MANUAL_ADJUSTMENT' %}
+          <span class="badge badge-gray">Manual</span>
+        {% endif %}
+        {{ e.description }}
+      </td>
+      <td class="r">
+        {% if e.debit %}<span class="dr">{{ e.debit|floatformat:2 }}</span>{% else %}—{% endif %}
+      </td>
+      <td class="r">
+        {% if e.credit %}<span class="cr">{{ e.credit|floatformat:2 }}</span>{% else %}—{% endif %}
+      </td>
+      <td class="r">
+        {% if e.balance > 0 %}<span class="bal-pos">{{ e.balance|floatformat:2 }} cr</span>
+        {% elif e.balance < 0 %}<span class="bal-neg">{{ e.balance|floatformat:2 }} dr</span>
+        {% else %}<span class="bal-zero">0.00</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" style="text-align:center;padding:16px;color:#9ca3af;">No ledger entries found.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4">TOTAL</td>
+      <td class="r dr">{{ total_debit|floatformat:2 }}</td>
+      <td class="r cr">{{ total_credit|floatformat:2 }}</td>
+      <td class="r">
+        {% if customer.balance > 0 %}<span class="bal-pos">{{ customer.balance|floatformat:2 }} cr</span>
+        {% elif customer.balance < 0 %}<span class="bal-neg">{{ customer.balance|floatformat:2 }} dr</span>
+        {% else %}<span class="bal-zero">0.00</span>{% endif %}
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<p class="footer">SENOVKA ERP &mdash; {{ customer.name }} Ledger &mdash; {{ generated_at|date:"d M Y" }}</p>
+</body>
+</html>

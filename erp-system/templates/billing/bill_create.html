@@ -1,0 +1,1022 @@
+{% extends 'base.html' %}
+{% block title %}Create Bill - ERP System{% endblock %}
+{% block page_title %}Create New Bill{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <a href="{% url 'billing:bill_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>Back to Bills
+    </a>
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="discardDraft()" class="text-xs font-medium text-gray-400 hover:text-red-600 transition">Clear form</button>
+      <a href="{% url 'billing:held_bills' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-1.414 1.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 006.586 13H4"/></svg>
+        Held Bills{% if held_bills_count %} ({{ held_bills_count }}){% endif %}
+      </a>
+    </div>
+  </div>
+
+  <div id="draft-banner" class="hidden p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 flex items-center justify-between gap-3">
+    <span id="draft-banner-text">Restored your in-progress bill.</span>
+    <button type="button" onclick="discardDraft()" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0">Discard &amp; start fresh</button>
+  </div>
+
+  {{ recall_data|json_script:"recall-data" }}
+
+  <form method="POST" id="bill-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="customer_id" id="f-customer-id">
+    <input type="hidden" name="items_json"  id="f-items-json">
+
+    <!-- ── 1. Customer ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Customer &amp; Bill Details
+        </h3>
+      </div>
+      <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Customer <span class="text-red-500">*</span></label>
+          <div class="relative" id="customer-search-wrap">
+            <input type="text" id="customer-search-input" placeholder="Type to search customer…"
+                   autocomplete="off"
+                   class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+            <div id="customer-dropdown"
+                 class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance display (hidden until customer selected) -->
+        <div id="balance-display" class="sm:col-span-2 hidden">
+          <div id="bd-box" class="inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 border border-gray-200 bg-gray-50">
+            <svg class="w-4 h-4 flex-shrink-0 text-gray-400" id="bd-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 leading-none" id="bd-label">Balance</p>
+              <p id="bd-val" class="text-sm font-bold mt-0.5 text-gray-400">Rs. 0.00</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Bill Date <span class="text-red-500">*</span></label>
+          <input type="date" name="bill_date" value="{{ today }}"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+          <input type="text" name="notes" placeholder="Optional notes…"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. Products ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Products
+        </h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p id="no-customer-msg" class="text-sm text-gray-400 italic">Select a customer above to load available products.</p>
+
+        <!-- Product card grid -->
+        <div id="product-grid-wrap" class="hidden">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="relative flex-1 max-w-sm">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+              </svg>
+              <input type="text" id="product-search-input" placeholder="Search products…"
+                     autocomplete="off" oninput="filterProductGrid(this.value)"
+                     class="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400">
+              <button id="product-search-clear" onclick="clearProductSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p id="product-grid-hint" class="text-xs text-gray-500">Click a product to add it to the bill</p>
+          </div>
+          <p id="product-no-results" class="hidden text-xs text-gray-400 italic py-2">No products match your search.</p>
+          <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1 pb-1"></div>
+        </div>
+
+        <!-- Items table -->
+        <div id="items-wrap" class="hidden overflow-x-auto rounded-lg border border-gray-200">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Avail. Qty</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-28">Quantity</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-36">Unit Price (Rs.)</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-24">Disc %</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc Amt</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Line Total</th>
+                <th class="px-3 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody" class="divide-y divide-gray-100 bg-white"></tbody>
+          </table>
+        </div>
+        <p id="no-items-msg" class="hidden text-xs text-gray-400 text-center py-2">No products added yet.</p>
+      </div>
+    </div>
+
+    <!-- ── 3. Summary ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900">Bill Summary</h3>
+      </div>
+      <div class="p-6">
+        <div class="max-w-xs ml-auto space-y-2 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span id="s-subtotal" class="font-medium">Rs. 0.00</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Item Discount</span><span id="s-discount" class="font-medium text-red-600">− Rs. 0.00</span></div>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500">Bill Discount</span>
+              <div class="relative">
+                <input type="number" id="bill-disc-pct" name="bill_discount_percent"
+                       min="0" max="100" step="0.01" value="0" placeholder="0"
+                       oninput="renderSummary()"
+                       class="w-20 px-2 py-1 pr-6 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-primary-500 outline-none transition">
+                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+              </div>
+            </div>
+            <span id="s-bill-discount" class="font-medium text-orange-600">− Rs. 0.00</span>
+          </div>
+          <div class="flex justify-between border-t pt-2"><span class="text-gray-700 font-semibold">Bill Total</span><span id="s-total" class="font-bold text-lg">Rs. 0.00</span></div>
+          <div id="s-balance-row" class="hidden flex justify-between text-primary-700"><span>Credit Applied</span><span id="s-balance">− Rs. 0.00</span></div>
+          <div id="s-outstanding-row" class="hidden flex justify-between text-red-600"><span>Existing Outstanding</span><span id="s-outstanding">+ Rs. 0.00</span></div>
+          <div class="flex justify-between border-t pt-2 text-green-700"><span class="font-semibold">Net Payable</span><span id="s-collect" class="font-bold text-lg">Rs. 0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. Payment Method ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Payment Method
+        </h3>
+      </div>
+      <div class="p-6 space-y-5">
+        <!-- Method cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="method-cards">
+          {% for val, label in method_choices %}
+          <label class="method-card relative cursor-pointer">
+            <input type="radio" name="payment_method" value="{{ val }}" class="sr-only peer" {% if val == 'FULL_CASH' %}checked{% endif %}>
+            <div class="peer-checked:border-primary-500 peer-checked:bg-primary-50 peer-checked:text-primary-700 border-2 border-gray-200 rounded-xl p-3 text-center transition hover:border-gray-300">
+              <span class="text-sm font-medium">{{ label }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+
+        <!-- Cash section -->
+        <div id="sec-cash" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Cash Amount (Rs.) <span class="text-red-500">*</span></label>
+            <input type="number" name="cash_amount" id="cash-amount" step="0.01" min="0" placeholder="0.00"
+                   class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+            <p id="cash-hint" class="mt-1 text-xs text-gray-400"></p>
+          </div>
+          <div class="flex items-end pb-1">
+            <label class="inline-flex items-center gap-2.5 cursor-pointer select-none px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition w-full">
+              <input type="checkbox" name="cash_is_senovka_transfer" id="cash-senovka-cb" value="1"
+                     class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <div>
+                <span class="block text-sm font-medium text-gray-700">Senovka Account Transfer</span>
+                <span class="block text-xs text-gray-400 mt-0.5">Customer transferred to Senovka bank account</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Cheque section -->
+        <div id="sec-cheque" class="hidden space-y-3">
+          <div id="cheque-list" class="space-y-3"></div>
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="addChequeRow()"
+                    class="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add another cheque
+            </button>
+            <p class="text-xs text-gray-500">Total cheques: <span id="cheque-total-display" class="font-semibold text-gray-700">Rs. 0.00</span></p>
+          </div>
+          <input type="hidden" name="cheques_json" id="f-cheques-json">
+        </div>
+
+        <!-- Pay Later info box -->
+        <div id="sec-pay-later" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <p class="font-semibold mb-1">Pay Later — Pending Bill</p>
+          <p>The full bill amount will be recorded as outstanding. Inventory is deducted immediately. Settle the payment later from the Pending Bills section.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex items-center justify-end gap-3 pb-4">
+      <a href="{% url 'billing:bill_list' %}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
+      <button type="button" onclick="holdCurrentBill()" id="hold-bill-btn"
+              class="px-5 py-2.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition">
+        Hold Bill
+      </button>
+      <button type="button" onclick="submitBill()"
+              class="px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+        Create Bill
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Qty Prompt Modal -->
+<div id="qty-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(17,24,39,0.45)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs" onclick="event.stopPropagation()">
+    <div class="px-6 pt-6 pb-2">
+      <div class="flex items-start justify-between mb-1">
+        <span class="text-xs font-semibold text-primary-600 uppercase tracking-wide">Add to Bill</span>
+        <button onclick="closeQtyPrompt()" class="p-1 -mt-1 -mr-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p id="qm-name" class="text-base font-bold text-gray-900 leading-snug"></p>
+      <p id="qm-meta" class="text-xs text-gray-400 mt-0.5 mb-4"></p>
+      <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        Quantity <span class="normal-case font-normal">(Available: <span id="qm-avail" class="font-semibold text-gray-700"></span>)</span>
+      </label>
+      <input type="number" id="qty-input" min="1" step="1" value="1"
+             class="w-full px-4 py-3 text-3xl font-bold text-center border-2 border-primary-400 rounded-xl outline-none focus:ring-4 focus:ring-primary-100 transition">
+
+      <!-- Price section — shown only when no custom price is set for this customer -->
+      <div id="qm-price-section" class="hidden mt-4 pt-4 border-t border-amber-100">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Unit Price
+          <span class="ml-1 normal-case font-normal text-amber-600">no price set — enter now</span>
+        </label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">Rs.</span>
+          <input type="number" id="price-input" min="0" step="0.01" value="" placeholder="0.00"
+                 class="w-full pl-12 pr-4 py-3 text-3xl font-bold text-right border-2 border-amber-400 rounded-xl outline-none focus:ring-4 focus:ring-amber-100 transition placeholder-gray-300">
+        </div>
+        <label class="inline-flex items-center gap-2 mt-2.5 text-xs text-amber-700 cursor-pointer select-none">
+          <input type="checkbox" id="qm-save-price" checked class="rounded accent-amber-500">
+          Save as custom price for this customer
+        </label>
+      </div>
+    </div>
+    <div class="flex gap-2 px-6 py-4">
+      <button onclick="closeQtyPrompt()" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+      <button onclick="confirmAddProduct()" id="qm-confirm-btn" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Add</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let _customer = null;    // {balance, products[]}
+let _items    = [];      // [{product_id,name,category,unit_price,quantity,discount_percent,…}]
+let _currentCustomerName = '';
+const TODAY = "{{ today }}";
+const RECALL_DATA = JSON.parse(document.getElementById('recall-data').textContent);
+const DRAFT_KEY = 'billDraftV1';
+
+// ── Customer search ────────────────────────────────────────────────────────
+const ALL_CUSTOMERS = [{% for c in customers %}{"id":{{ c.id }},"name":"{{ c.name|escapejs }}"},{% endfor %}];
+
+(function initCustomerSearch() {
+  const input    = document.getElementById('customer-search-input');
+  const dropdown = document.getElementById('customer-dropdown');
+
+  input.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    if (!q) { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; return; }
+    const hits = ALL_CUSTOMERS.filter(c => c.name.toLowerCase().includes(q)).slice(0, 25);
+    dropdown.innerHTML = hits.length
+      ? hits.map(c => `<div class="cs-opt px-4 py-2.5 text-sm text-gray-800 hover:bg-primary-50 hover:text-primary-700 cursor-pointer border-b border-gray-100 last:border-0" data-id="${c.id}" data-name="${c.name.replace(/"/g,'&quot;')}">${c.name}</div>`).join('')
+      : '<p class="px-4 py-3 text-sm text-gray-400 italic">No customers found.</p>';
+    dropdown.querySelectorAll('.cs-opt').forEach(el =>
+      el.addEventListener('mousedown', e => { e.preventDefault(); selectCustomer(parseInt(el.dataset.id), el.dataset.name); })
+    );
+    dropdown.classList.remove('hidden');
+  });
+
+  input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 150));
+  input.addEventListener('focus', function () { if (this.value.trim()) this.dispatchEvent(new Event('input')); });
+})();
+
+function renderCustomerUI(data) {
+  _customer = data;
+
+  const bal = data.balance;
+  document.getElementById('balance-display').classList.remove('hidden');
+
+  // Unified balance box
+  const box   = document.getElementById('bd-box');
+  const val   = document.getElementById('bd-val');
+  const label = document.getElementById('bd-label');
+  const icon  = document.getElementById('bd-icon');
+  if (bal > 0) {
+    box.className   = 'inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 border border-green-200 bg-green-50';
+    val.className   = 'text-sm font-bold mt-0.5 text-green-700';
+    icon.className  = 'w-4 h-4 flex-shrink-0 text-green-500';
+    label.textContent = 'Credit Balance';
+    val.textContent   = 'Rs. ' + fmt(bal) + ' — will be deducted';
+  } else if (bal < 0) {
+    box.className   = 'inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 border border-red-200 bg-red-50';
+    val.className   = 'text-sm font-bold mt-0.5 text-red-700';
+    icon.className  = 'w-4 h-4 flex-shrink-0 text-red-500';
+    label.textContent = 'Outstanding Balance';
+    val.textContent   = 'Rs. ' + fmt(Math.abs(bal)) + ' — will be added to net payable';
+  } else {
+    box.className   = 'inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 border border-gray-200 bg-gray-50';
+    val.className   = 'text-sm font-bold mt-0.5 text-gray-400';
+    icon.className  = 'w-4 h-4 flex-shrink-0 text-gray-400';
+    label.textContent = 'Balance';
+    val.textContent   = 'Rs. 0.00';
+  }
+
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '';
+  // Reset search when customer changes
+  const psi = document.getElementById('product-search-input');
+  if (psi) { psi.value = ''; document.getElementById('product-search-clear').classList.add('hidden'); }
+  document.getElementById('product-no-results').classList.add('hidden');
+
+  data.products.forEach(p => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.dataset.productId = p.id;
+    card.dataset.search    = (p.name + ' ' + p.category + ' ' + (p.size || '')).toLowerCase();
+    card.onclick = () => addProductFromGrid(p, card);
+    card.className = 'product-card text-left p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all cursor-pointer w-full';
+    const priceDisplay = p.has_custom_price
+      ? `<span class="text-xs font-bold text-primary-700">Rs.${fmt(p.unit_price)}</span>`
+      : `<span class="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">No price</span>`;
+    card.innerHTML = `
+      <p class="font-semibold text-sm text-gray-900 truncate leading-tight">${p.name}${p.size ? ' <span class="text-xs font-normal text-gray-500">('+p.size+')</span>' : ''}</p>
+      <p class="text-xs text-gray-400 mt-0.5 truncate">${p.category}</p>
+      <div class="flex items-center justify-between mt-2">
+        <span class="text-xs text-gray-500">Qty: <span class="font-medium text-gray-700">${p.available_qty}</span></span>
+        ${priceDisplay}
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('no-customer-msg').classList.add('hidden');
+  document.getElementById('product-grid-wrap').classList.remove('hidden');
+  updateGridStates();
+  renderSummary();
+}
+
+function selectCustomer(cid, name) {
+  const input = document.getElementById('customer-search-input');
+  input.value = name;
+  document.getElementById('customer-dropdown').classList.add('hidden');
+  document.getElementById('f-customer-id').value = cid;
+  _currentCustomerName = name;
+  document.querySelectorAll('.cheque-row .chq-customer-name').forEach(inp => {
+    if (!inp.value.trim()) inp.value = name;
+  });
+
+  fetch(`/billing/api/customer/${cid}/`)
+    .then(r => r.json())
+    .then(data => {
+      renderCustomerUI(data);
+      saveDraft();
+    })
+    .catch(() => alert('Failed to load customer data. Check your connection.'));
+}
+
+// ── Qty prompt modal ───────────────────────────────────────────────────────
+let _qtyProduct = null;
+
+function addProductFromGrid(p) {
+  const existing = _items.findIndex(i => i.product_id === p.id);
+  if (existing >= 0) {
+    // Already added — scroll to row and focus its qty input
+    const rows = document.querySelectorAll('#items-tbody tr');
+    if (rows[existing]) {
+      rows[existing].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const inp = rows[existing].querySelector('input[type="number"]');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+    return;
+  }
+  _qtyProduct = p;
+  document.getElementById('qm-name').textContent = p.name + (p.size ? ` (${p.size})` : '');
+  document.getElementById('qm-meta').textContent  = p.category + (p.has_custom_price ? '  ·  Rs.' + fmt(p.unit_price) : '');
+  document.getElementById('qm-avail').textContent = p.available_qty;
+
+  const priceSection = document.getElementById('qm-price-section');
+  if (p.has_custom_price) {
+    priceSection.classList.add('hidden');
+  } else {
+    priceSection.classList.remove('hidden');
+    document.getElementById('price-input').value = '';
+    document.getElementById('qm-save-price').checked = true;
+  }
+
+  const inp = document.getElementById('qty-input');
+  inp.value = '1';
+  document.getElementById('qty-modal').classList.remove('hidden');
+  setTimeout(() => { inp.focus(); inp.select(); }, 40);
+}
+
+function closeQtyPrompt() {
+  document.getElementById('qty-modal').classList.add('hidden');
+  _qtyProduct = null;
+}
+
+function confirmAddProduct() {
+  if (!_qtyProduct) return;
+  const p   = _qtyProduct;
+  const qty = Math.max(1, parseInt(document.getElementById('qty-input').value) || 1);
+
+  let unitPrice = parseFloat(p.unit_price) || 0;
+  let savePrice = false;
+  if (!p.has_custom_price) {
+    const entered = parseFloat(document.getElementById('price-input').value);
+    if (!isNaN(entered) && entered >= 0) unitPrice = entered;
+    savePrice = document.getElementById('qm-save-price').checked;
+  }
+
+  closeQtyPrompt();
+  _items.push({
+    product_id:       p.id,
+    name:             p.name,
+    category:         p.category,
+    available_qty:    p.available_qty,
+    unit_price:       unitPrice,
+    has_custom_price: p.has_custom_price,
+    save_price:       savePrice,
+    quantity:         qty,
+    discount_percent: 0,
+    discount_amount:  0,
+    line_total:       unitPrice * qty,
+  });
+  renderTable();
+  renderSummary();
+  updateGridStates();
+  saveDraft();
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#items-tbody tr');
+    if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 40);
+}
+
+document.getElementById('qty-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const ps = document.getElementById('qm-price-section');
+    if (!ps.classList.contains('hidden')) {
+      const pi = document.getElementById('price-input');
+      pi.focus(); pi.select();
+    } else {
+      confirmAddProduct();
+    }
+  }
+  if (e.key === 'Escape') { e.preventDefault(); closeQtyPrompt(); }
+});
+document.getElementById('price-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter')  { e.preventDefault(); confirmAddProduct(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeQtyPrompt(); }
+});
+document.getElementById('qty-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeQtyPrompt();
+});
+
+// ── Update card visual states ──────────────────────────────────────────────
+function updateGridStates() {
+  const addedIds = new Set(_items.map(i => i.product_id));
+  document.querySelectorAll('.product-card').forEach(card => {
+    const pid = parseInt(card.dataset.productId);
+    if (addedIds.has(pid)) {
+      card.className = 'product-card text-left p-3 rounded-lg border-2 border-primary-500 bg-primary-50 cursor-default w-full';
+      if (!card.querySelector('.added-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'added-badge block text-xs text-primary-600 font-semibold mt-1.5';
+        badge.textContent = '✓ Added';
+        card.appendChild(badge);
+      }
+    } else {
+      card.className = 'product-card text-left p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all cursor-pointer w-full';
+      const badge = card.querySelector('.added-badge');
+      if (badge) badge.remove();
+    }
+  });
+}
+
+// ── Remove item ────────────────────────────────────────────────────────────
+function removeItem(idx) {
+  _items.splice(idx, 1);
+  renderTable();
+  renderSummary();
+  updateGridStates();
+  saveDraft();
+}
+
+// ── Field update ───────────────────────────────────────────────────────────
+function updateField(idx, field, val) {
+  const v = field === 'quantity' ? Math.max(1, parseInt(val) || 1) : (parseFloat(val) || 0);
+  _items[idx][field] = v;
+  if (field === 'unit_price' && _items[idx].has_custom_price) {
+    // Editing an already-priced item means the saved customer price should follow it.
+    _items[idx].save_price = true;
+  }
+  const item = _items[idx];
+  item.discount_amount = (item.quantity * item.unit_price * item.discount_percent / 100);
+  item.line_total      = Math.max(0, item.quantity * item.unit_price - item.discount_amount);
+  renderTable();
+  renderSummary();
+  saveDraft();
+}
+
+// ── Qty stepper ────────────────────────────────────────────────────────────
+function stepQty(idx, delta) {
+  updateField(idx, 'quantity', Math.max(1, (_items[idx].quantity || 1) + delta));
+}
+
+// ── Render table ───────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('items-tbody');
+  const wrap  = document.getElementById('items-wrap');
+  const noMsg = document.getElementById('no-items-msg');
+
+  if (_items.length === 0) {
+    wrap.classList.add('hidden');
+    noMsg.classList.remove('hidden');
+    tbody.innerHTML = '';
+    return;
+  }
+  wrap.classList.remove('hidden');
+  noMsg.classList.add('hidden');
+
+  tbody.innerHTML = _items.map((item, idx) => `
+    <tr>
+      <td class="px-3 py-2.5">
+        <p class="font-medium text-gray-900 text-sm">${item.name}</p>
+        <p class="text-xs text-gray-400">${item.category}</p>
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs text-gray-400 whitespace-nowrap">${item.available_qty}</td>
+      <td class="px-3 py-2.5">
+        <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+          <button type="button" onclick="stepQty(${idx},-1)"
+                  class="w-7 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition border-r border-gray-300">−</button>
+          <input type="number" value="${item.quantity}" min="1" step="1"
+                 onchange="updateField(${idx},'quantity',this.value)"
+                 class="w-10 h-8 text-sm text-center border-0 outline-none">
+          <button type="button" onclick="stepQty(${idx},1)"
+                  class="w-7 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition border-l border-gray-300">+</button>
+        </div>
+      </td>
+      <td class="px-3 py-2.5 text-right">
+        <input type="number" value="${item.unit_price}" min="0" step="0.01"
+               onchange="updateField(${idx},'unit_price',this.value)"
+               class="w-28 px-2 py-1.5 border ${item.has_custom_price ? 'border-gray-300' : 'border-amber-300 bg-amber-50'} rounded-lg text-sm text-right focus:ring-2 focus:ring-primary-500 outline-none">
+        <label class="inline-flex items-center gap-1 mt-0.5 text-xs ${item.has_custom_price ? 'text-gray-500' : 'text-amber-700'} cursor-pointer justify-end w-full">
+          <input type="checkbox" ${item.save_price ? 'checked' : ''} onchange="_items[${idx}].save_price=this.checked" class="rounded accent-amber-500">
+          <span>${item.has_custom_price ? 'Update saved price' : 'Save as price'}</span>
+        </label>
+      </td>
+      <td class="px-3 py-2.5 text-right">
+        <input type="number" value="${item.discount_percent}" min="0" max="100" step="0.01"
+               onchange="updateField(${idx},'discount_percent',this.value)"
+               class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-primary-500 outline-none">
+      </td>
+      <td class="px-3 py-2.5 text-right text-sm text-red-600">Rs. ${fmt(item.discount_amount)}</td>
+      <td class="px-3 py-2.5 text-right text-sm font-semibold text-gray-900">Rs. ${fmt(item.line_total)}</td>
+      <td class="px-3 py-2.5 text-right">
+        <button type="button" onclick="removeItem(${idx})" class="p-1 text-gray-400 hover:text-red-600 rounded transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── Render summary ─────────────────────────────────────────────────────────
+function renderSummary() {
+  let subtotal = 0, totalDisc = 0;
+  _items.forEach(i => {
+    subtotal  += i.quantity * i.unit_price;
+    totalDisc += i.discount_amount;
+  });
+  const itemsTotal    = Math.max(0, subtotal - totalDisc);
+  const billDiscPct   = Math.min(100, Math.max(0, parseFloat(document.getElementById('bill-disc-pct')?.value) || 0));
+  const billDiscAmt   = Math.round(itemsTotal * billDiscPct / 100 * 100) / 100;
+  const total         = Math.max(0, itemsTotal - billDiscAmt);
+  const bal    = _customer ? _customer.balance : 0;   // positive=credit, negative=owes
+  const method = document.querySelector('input[name="payment_method"]:checked')?.value || '';
+
+  // Credit only applies on non-PAY_LATER, non-partial methods
+  const credit  = bal > 0 ? bal : 0;
+  const balUsed = (method === 'PAY_LATER' || method === 'PARTIAL_CASH' || method === 'PARTIAL_CHEQUE')
+    ? 0
+    : Math.min(credit, total);
+  // Outstanding (negative balance) adds to net payable on non-PAY_LATER full payments
+  const outstanding = bal < 0 ? Math.abs(bal) : 0;
+  const outAdded    = (method !== 'PAY_LATER' && method !== '' && method !== 'PARTIAL_CASH' && method !== 'PARTIAL_CHEQUE')
+    ? outstanding : 0;
+
+  const collect = Math.max(0, total - balUsed + outAdded);
+
+  document.getElementById('s-subtotal').textContent      = 'Rs. ' + fmt(subtotal);
+  document.getElementById('s-discount').textContent      = '− Rs. ' + fmt(totalDisc);
+  document.getElementById('s-bill-discount').textContent = '− Rs. ' + fmt(billDiscAmt);
+  document.getElementById('s-total').textContent         = 'Rs. ' + fmt(total);
+
+  const balRow  = document.getElementById('s-balance-row');
+  const outRow  = document.getElementById('s-outstanding-row');
+  if (balUsed > 0) {
+    balRow.classList.remove('hidden');
+    document.getElementById('s-balance').textContent = '− Rs. ' + fmt(balUsed);
+  } else {
+    balRow.classList.add('hidden');
+  }
+  if (outAdded > 0) {
+    outRow.classList.remove('hidden');
+    document.getElementById('s-outstanding').textContent = '+ Rs. ' + fmt(outAdded);
+  } else {
+    outRow.classList.add('hidden');
+  }
+
+  document.getElementById('s-collect').textContent = 'Rs. ' + fmt(collect);
+
+  // hint on cash input
+  document.getElementById('cash-hint').textContent =
+    collect > 0 ? `Net payable: Rs. ${fmt(collect)}` : 'Credit balance covers full amount.';
+}
+
+// ── Cheque rows (multi-cheque support) ───────────────────────────────────────
+let _chequeRowSeq = 0;
+
+function chequeRowTemplate(seq, prefill) {
+  prefill = prefill || {};
+  return `
+  <div class="cheque-row border border-gray-200 rounded-lg p-4 relative" data-seq="${seq}">
+    <button type="button" onclick="removeChequeRow(${seq})" title="Remove cheque"
+            class="cheque-row-remove absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Received Date</label>
+        <input type="date" class="chq-received w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" value="${TODAY}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Maturity Date <span class="text-red-500">*</span></label>
+        <input type="date" class="chq-maturity w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" value="${prefill.maturity_date || ''}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Customer Name on Cheque</label>
+        <input type="text" class="chq-customer-name w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="Name on cheque" value="${prefill.customer_name || ''}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Cheque Number <span class="text-red-500">*</span></label>
+        <input type="text" class="chq-number w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="Cheque #">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Account Number</label>
+        <input type="text" class="chq-account w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="Account #">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Bank Name <span class="text-red-500">*</span></label>
+        <input type="text" class="chq-bank w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="Bank name">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Branch Name</label>
+        <input type="text" class="chq-branch w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="Branch">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Cheque Amount (Rs.) <span class="text-red-500">*</span></label>
+        <input type="number" class="chq-amount w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition" step="0.01" min="0" placeholder="0.00" value="${prefill.amount || ''}" oninput="updateChequeTotal(); renderSummary();">
+      </div>
+    </div>
+  </div>`;
+}
+
+function addChequeRow(prefill) {
+  _chequeRowSeq++;
+  prefill = prefill || {};
+  if (!prefill.customer_name) prefill.customer_name = _currentCustomerName;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = chequeRowTemplate(_chequeRowSeq, prefill);
+  document.getElementById('cheque-list').appendChild(wrap.firstElementChild);
+  updateChequeRemoveButtons();
+  updateChequeTotal();
+  saveDraft();
+}
+
+function removeChequeRow(seq) {
+  const row = document.querySelector(`.cheque-row[data-seq="${seq}"]`);
+  if (row) row.remove();
+  updateChequeRemoveButtons();
+  updateChequeTotal();
+  saveDraft();
+}
+
+function updateChequeRemoveButtons() {
+  const rows = document.querySelectorAll('.cheque-row');
+  rows.forEach(r => r.querySelector('.cheque-row-remove').classList.toggle('hidden', rows.length <= 1));
+}
+
+function updateChequeTotal() {
+  let total = 0;
+  document.querySelectorAll('.cheque-row .chq-amount').forEach(inp => total += parseFloat(inp.value) || 0);
+  const disp = document.getElementById('cheque-total-display');
+  if (disp) disp.textContent = 'Rs. ' + fmt(total);
+  return total;
+}
+
+function collectChequeRows() {
+  const rows = [];
+  document.querySelectorAll('.cheque-row').forEach(r => {
+    const amount = parseFloat(r.querySelector('.chq-amount').value) || 0;
+    if (amount <= 0) return;
+    rows.push({
+      amount:         amount,
+      customer_name:  r.querySelector('.chq-customer-name').value.trim(),
+      cheque_number:  r.querySelector('.chq-number').value.trim(),
+      bank_name:      r.querySelector('.chq-bank').value.trim(),
+      branch_name:    r.querySelector('.chq-branch').value.trim(),
+      account_number: r.querySelector('.chq-account').value.trim(),
+      received_date:  r.querySelector('.chq-received').value,
+      maturity_date:  r.querySelector('.chq-maturity').value,
+    });
+  });
+  return rows;
+}
+
+if (document.getElementById('cheque-list').children.length === 0) addChequeRow();
+
+// ── Payment method toggle ──────────────────────────────────────────────────
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+  radio.addEventListener('change', function () {
+    const v = this.value;
+    const showCash   = ['FULL_CASH',  'PARTIAL_CASH',  'MIXED'].includes(v);
+    const showCheque = ['FULL_CHEQUE','PARTIAL_CHEQUE','MIXED'].includes(v);
+    const showLater  = v === 'PAY_LATER';
+
+    document.getElementById('sec-cash').classList.toggle('hidden', !showCash);
+    document.getElementById('sec-cheque').classList.toggle('hidden', !showCheque);
+    document.getElementById('sec-pay-later').classList.toggle('hidden', !showLater);
+
+    // Labels
+    document.querySelector('label[for="cash-label"]');  // n/a, using ids
+    if (showCash && !showCheque) {
+      document.querySelector('#sec-cash label').textContent = 'Cash Amount (Rs.) *';
+    }
+    renderSummary();
+  });
+});
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+function submitBill() {
+  if (!document.getElementById('f-customer-id').value) {
+    alert('Please select a customer.');
+    return;
+  }
+  if (_items.length === 0) {
+    alert('Please add at least one product to the bill.');
+    return;
+  }
+  const method = document.querySelector('input[name="payment_method"]:checked')?.value;
+  if (!method) {
+    alert('Please select a payment method.');
+    return;
+  }
+
+  if (['FULL_CHEQUE', 'PARTIAL_CHEQUE', 'MIXED'].includes(method)) {
+    for (const row of document.querySelectorAll('.cheque-row')) {
+      const amount = parseFloat(row.querySelector('.chq-amount').value) || 0;
+      if (amount <= 0) continue;
+      if (!row.querySelector('.chq-number').value.trim() || !row.querySelector('.chq-bank').value.trim()) {
+        alert('Each cheque needs a cheque number and bank name.');
+        return;
+      }
+    }
+    document.getElementById('f-cheques-json').value = JSON.stringify(collectChequeRows());
+  }
+
+  document.getElementById('f-items-json').value = JSON.stringify(
+    _items.map(i => ({
+      product_id:       i.product_id,
+      quantity:         i.quantity,
+      unit_price:       i.unit_price,
+      discount_percent: i.discount_percent,
+      save_price:       i.save_price || false,
+    }))
+  );
+
+  clearDraft();
+  document.getElementById('bill-form').submit();
+}
+
+// ── Product grid search ────────────────────────────────────────────────────
+function filterProductGrid(q) {
+  const term = q.trim().toLowerCase();
+  document.getElementById('product-search-clear').classList.toggle('hidden', !term);
+  let visible = 0;
+  document.querySelectorAll('.product-card').forEach(card => {
+    const match = !term || (card.dataset.search || '').includes(term);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('product-no-results').classList.toggle('hidden', visible > 0);
+}
+
+function clearProductSearch() {
+  const el = document.getElementById('product-search-input');
+  if (el) { el.value = ''; el.focus(); }
+  filterProductGrid('');
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return parseFloat(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function debounce(fn, ms) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+function showToast(msg, kind) {
+  const colors = { info: 'bg-blue-600', success: 'bg-green-600', error: 'bg-red-600' };
+  const el = document.createElement('div');
+  el.className = `fixed bottom-5 right-5 z-50 ${colors[kind] || colors.info} text-white text-sm font-medium px-4 py-3 rounded-lg shadow-lg transition-opacity duration-300`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ── Draft persistence (survives an accidental browser refresh) ──────────────
+function saveDraft() {
+  if (!_customer && _items.length === 0) { clearDraft(); return; }
+  const method = document.querySelector('input[name="payment_method"]:checked')?.value || '';
+  const draft = {
+    customer_id:              document.getElementById('f-customer-id').value || '',
+    customer_name:            _currentCustomerName,
+    bill_date:                document.querySelector('input[name="bill_date"]')?.value || '',
+    notes:                    document.querySelector('input[name="notes"]')?.value || '',
+    bill_discount_percent:    document.getElementById('bill-disc-pct')?.value || '0',
+    items:                    _items,
+    payment_method:           method,
+    cash_amount:              document.getElementById('cash-amount')?.value || '',
+    cash_is_senovka_transfer: document.getElementById('cash-senovka-cb')?.checked || false,
+    cheques:                  (typeof collectChequeRows === 'function') ? collectChequeRows() : [],
+    savedAt:                  Date.now(),
+  };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function applyDraftFormFields(data) {
+  if (data.bill_date) {
+    const el = document.querySelector('input[name="bill_date"]');
+    if (el) el.value = data.bill_date;
+  }
+  if (data.notes !== undefined) {
+    const el = document.querySelector('input[name="notes"]');
+    if (el) el.value = data.notes;
+  }
+  if (data.bill_discount_percent !== undefined) {
+    const el = document.getElementById('bill-disc-pct');
+    if (el) el.value = data.bill_discount_percent;
+  }
+  if (data.payment_method) {
+    const radio = document.querySelector(`input[name="payment_method"][value="${data.payment_method}"]`);
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+  }
+  if (data.cash_amount) {
+    const el = document.getElementById('cash-amount');
+    if (el) el.value = data.cash_amount;
+  }
+  if (data.cash_is_senovka_transfer) {
+    const el = document.getElementById('cash-senovka-cb');
+    if (el) el.checked = true;
+  }
+  if (Array.isArray(data.cheques) && data.cheques.length) {
+    document.getElementById('cheque-list').innerHTML = '';
+    data.cheques.forEach(c => addChequeRow(c));
+  }
+}
+
+function restoreFromData(data) {
+  if (!data) return;
+  _items = Array.isArray(data.items) ? data.items : [];
+
+  if (data.customer_id) {
+    document.getElementById('customer-search-input').value = data.customer_name || '';
+    document.getElementById('f-customer-id').value = data.customer_id;
+    _currentCustomerName = data.customer_name || '';
+    fetch(`/billing/api/customer/${data.customer_id}/`)
+      .then(r => r.json())
+      .then(custData => {
+        renderCustomerUI(custData);
+        renderTable();
+        applyDraftFormFields(data);
+        renderSummary();
+        saveDraft();
+      })
+      .catch(() => { renderTable(); applyDraftFormFields(data); renderSummary(); });
+  } else {
+    renderTable();
+    applyDraftFormFields(data);
+    renderSummary();
+  }
+}
+
+function discardDraft() {
+  if ((_items.length > 0 || _customer) && !confirm('Discard this in-progress bill and start fresh?')) return;
+  clearDraft();
+  location.reload();
+}
+
+document.getElementById('bill-form').addEventListener('input', debounce(saveDraft, 500));
+document.getElementById('bill-form').addEventListener('change', () => saveDraft());
+
+(function initDraftOrRecall() {
+  if (RECALL_DATA) {
+    restoreFromData(RECALL_DATA);
+    document.getElementById('draft-banner-text').textContent = 'Recalled held bill — continue where you left off.';
+    document.getElementById('draft-banner').classList.remove('hidden');
+    return;
+  }
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    if (data && ((Array.isArray(data.items) && data.items.length) || data.customer_id)) {
+      restoreFromData(data);
+      document.getElementById('draft-banner-text').textContent = 'Restored your in-progress bill from before the refresh.';
+      document.getElementById('draft-banner').classList.remove('hidden');
+    }
+  } catch (e) {
+    clearDraft();
+  }
+})();
+
+// ── Hold bill (park cart server-side; recall from Held Bills) ───────────────
+function holdCurrentBill() {
+  if (_items.length === 0) {
+    alert('Add at least one product before holding.');
+    return;
+  }
+  const btn = document.getElementById('hold-bill-btn');
+  btn.disabled = true;
+  btn.textContent = 'Holding…';
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('#bill-form [name=csrfmiddlewaretoken]').value);
+  formData.append('customer_id', document.getElementById('f-customer-id').value || '');
+  formData.append('customer_name', _currentCustomerName || '');
+  formData.append('bill_date', document.querySelector('input[name="bill_date"]')?.value || '');
+  formData.append('notes', document.querySelector('input[name="notes"]')?.value || '');
+  formData.append('bill_discount_percent', document.getElementById('bill-disc-pct')?.value || '0');
+  formData.append('items_json', JSON.stringify(_items));
+
+  fetch("{% url 'billing:hold_bill_create' %}", { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+      btn.disabled = false;
+      btn.textContent = 'Hold Bill';
+      if (!res.ok) {
+        alert(res.error || 'Could not hold this bill.');
+        return;
+      }
+      clearDraft();
+      _items = [];
+      _customer = null;
+      _currentCustomerName = '';
+      document.getElementById('customer-search-input').value = '';
+      document.getElementById('f-customer-id').value = '';
+      document.getElementById('balance-display').classList.add('hidden');
+      document.getElementById('no-customer-msg').classList.remove('hidden');
+      document.getElementById('product-grid-wrap').classList.add('hidden');
+      document.getElementById('draft-banner').classList.add('hidden');
+      renderTable();
+      renderSummary();
+      showToast('Bill held. Find it in Held Bills to resume.', 'success');
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = 'Hold Bill';
+      alert('Network error — could not hold this bill.');
+    });
+}
+</script>
+{% endblock %}

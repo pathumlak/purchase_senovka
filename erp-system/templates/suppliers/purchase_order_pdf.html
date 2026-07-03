@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ order.order_number }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 30px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 20px; }
+  .company { font-size: 20px; font-weight: bold; color: #1e40af; letter-spacing: 1px; }
+  .po-meta { text-align: right; }
+  .po-meta .po-num { font-size: 16px; font-weight: bold; color: #1e40af; }
+  .po-meta .status { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 99px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
+  .status-pending  { background: #fef3c7; color: #92400e; }
+  .status-received { background: #d1fae5; color: #065f46; }
+  .status-cancelled{ background: #f3f4f6; color: #6b7280; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .info-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; }
+  .info-block .label { font-size: 9px; text-transform: uppercase; letter-spacing: .6px; color: #94a3b8; margin-bottom: 3px; }
+  .info-block .value { font-size: 12px; font-weight: bold; color: #1e293b; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  thead th { background: #1e40af; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  thead th.right { text-align: right; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
+  tbody td.right { text-align: right; }
+  tfoot td { padding: 9px 10px; font-weight: bold; background: #eff6ff; font-size: 12px; }
+  tfoot td.right { text-align: right; color: #1e40af; font-size: 13px; }
+  .notes-box { margin-top: 12px; padding: 10px 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; }
+  .notes-box .label { font-size: 9px; text-transform: uppercase; letter-spacing: .6px; color: #92400e; margin-bottom: 3px; }
+  .customer-box { margin-top: 12px; padding: 10px 14px; background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 6px; font-size: 10px; color: #065f46; }
+  .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 9px; color: #94a3b8; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="company">SENOVKA ERP</div>
+    <div style="color:#64748b;margin-top:4px;">Purchase Order</div>
+  </div>
+  <div class="po-meta">
+    <div class="po-num">{{ order.order_number }}</div>
+    <div class="status status-{{ order.status }}">{{ order.get_status_display }}</div>
+    <div style="color:#64748b;font-size:10px;margin-top:6px;">Generated: {{ generated_at|date:"d M Y, H:i" }}</div>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-block">
+    <div class="label">Supplier</div>
+    <div class="value">{{ order.supplier.name }}</div>
+    {% if order.supplier.phone %}<div style="color:#64748b;font-size:10px;margin-top:2px;">{{ order.supplier.phone }}</div>{% endif %}
+    {% if order.supplier.email %}<div style="color:#64748b;font-size:10px;">{{ order.supplier.email }}</div>{% endif %}
+    {% if order.supplier.address %}<div style="color:#64748b;font-size:10px;">{{ order.supplier.address }}</div>{% endif %}
+  </div>
+  <div>
+    <div class="info-block" style="margin-bottom:8px;">
+      <div class="label">Order Date</div>
+      <div class="value">{{ order.order_date|date:"d M Y" }}</div>
+    </div>
+    <div class="info-block">
+      <div class="label">Expected Delivery</div>
+      <div class="value">{{ order.expected_date|date:"d M Y"|default:"—" }}</div>
+    </div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:30px">#</th>
+      <th>Product</th>
+      <th>Category</th>
+      <th class="right" style="width:70px">Qty</th>
+      <th class="right" style="width:90px">Unit Price</th>
+      <th class="right" style="width:100px">Line Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in order.items.all %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ item.product.name }}</td>
+      <td>{{ item.product.category.name }}</td>
+      <td class="right">{{ item.quantity }}</td>
+      <td class="right">Rs. {{ item.unit_price|floatformat:2 }}</td>
+      <td class="right">Rs. {{ item.line_total|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="5" class="right">ORDER TOTAL</td>
+      <td class="right">Rs. {{ order.total_cost|floatformat:2 }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+{% if order.notes %}
+<div class="notes-box">
+  <div class="label">Notes</div>
+  <div>{{ order.notes }}</div>
+</div>
+{% endif %}
+
+{% if order.supplier.customer %}
+<div class="customer-box">
+  Linked Customer: <strong>{{ order.supplier.customer.name }}</strong> —
+  Rs. {{ order.total_cost|floatformat:2 }} will be deducted from their balance when this order is received.
+</div>
+{% endif %}
+
+<div class="footer">SENOVKA ERP &bull; {{ order.order_number }} &bull; Printed {{ generated_at|date:"d M Y H:i" }}</div>
+
+{% if printable %}
+<script>window.onload = function(){ window.print(); }</script>
+{% endif %}
+</body>
+</html>

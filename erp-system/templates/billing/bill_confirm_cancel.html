@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Cancel Bill - ERP System{% endblock %}
+{% block page_title %}Cancel Bill{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-8 text-center">
+      <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-5">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Cancel Bill {{ bill.bill_number }}?</h2>
+      <p class="text-sm text-gray-600 mb-1">This will reverse all inventory deductions and restore stock levels.</p>
+      <p class="text-sm text-gray-500">This action cannot be undone.</p>
+      <div class="mt-5 text-left bg-gray-50 rounded-lg p-4 space-y-1.5 text-sm">
+        <div class="flex justify-between"><span class="text-gray-500">Customer:</span><span class="font-medium">{{ bill.customer.name }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Date:</span><span class="font-medium">{{ bill.bill_date|date:"d M Y" }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Total Amount:</span><span class="font-bold text-red-700">Rs. {{ bill.total_amount|floatformat:2 }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Products:</span><span class="font-medium">{{ bill.items.count }}</span></div>
+      </div>
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="flex gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <a href="{% url 'billing:bill_detail' bill.pk %}" class="flex-1 text-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Keep Bill</a>
+        <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Yes, Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

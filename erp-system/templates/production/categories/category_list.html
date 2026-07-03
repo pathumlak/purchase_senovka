@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Product Categories - ERP System{% endblock %}
+{% block page_title %}Product Categories{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Categories</h2>
+            <p class="mt-1 text-sm text-gray-500">Manage your product categories</p>
+        </div>
+        <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Category
+        </button>
+    </div>
+
+    <!-- Filters and Downloads -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-3 md:items-end">
+            <div class="md:col-span-5">
+                <label for="q" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Search Category</label>
+                <input
+                    id="q"
+                    name="q"
+                    type="text"
+                    value="{{ search_query }}"
+                    placeholder="Type category name..."
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+                >
+            </div>
+            <div class="md:col-span-4">
+                <label for="stock_mode" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Product Status</label>
+                <select
+                    id="stock_mode"
+                    name="stock_mode"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white"
+                >
+                    <option value="all" {% if stock_mode == 'all' %}selected{% endif %}>All</option>
+                    <option value="with_products" {% if stock_mode == 'with_products' %}selected{% endif %}>With Products</option>
+                    <option value="without_products" {% if stock_mode == 'without_products' %}selected{% endif %}>Without Products</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 flex flex-wrap gap-2 md:justify-end">
+                <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Apply</button>
+                <a href="{% url 'category_list' %}?date_from=&date_to=" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Reset</a>
+            </div>
+            <div class="md:col-span-4">
+                <label for="date_from" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Created From</label>
+                <input id="date_from" name="date_from" type="date" value="{{ date_from }}"
+                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+            </div>
+            <div class="md:col-span-4">
+                <label for="date_to" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Created To</label>
+                <input id="date_to" name="date_to" type="date" value="{{ date_to }}"
+                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+            </div>
+        </form>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-3">
+            <p class="text-xs text-gray-500">
+                Showing {{ filtered_count }} categories &middot; current month by default —
+                <a href="{% url 'category_list' %}?date_from=&date_to=" class="text-primary-600 hover:underline font-medium">view all time</a>
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <a
+                    href="{% url 'category_export_excel' %}?q={{ search_query|urlencode }}&stock_mode={{ stock_mode }}&date_from={{ date_from }}&date_to={{ date_to }}"
+                    class="px-4 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition"
+                >
+                    Download Excel
+                </a>
+                <a
+                    href="{% url 'category_export_pdf' %}?q={{ search_query|urlencode }}&stock_mode={{ stock_mode }}&date_from={{ date_from }}&date_to={{ date_to }}"
+                    class="px-4 py-2 text-sm font-semibold text-rose-700 bg-rose-50 border border-rose-300 rounded-lg hover:bg-rose-100 transition"
+                >
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Categories</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_categories }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-accent-50 rounded-lg">
+                    <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Active</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ filtered_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-50 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Products</p>
+                    <a href="{% url 'product_list' %}" class="text-2xl font-bold text-primary-600 hover:text-primary-700">{{ total_products }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Table -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Products</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for category in categories %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-bold">
+                                    {{ category.name|first|upper }}
+                                </div>
+                                <span class="text-sm font-semibold text-gray-900">{{ category.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ category.description|default:"—" }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold">{{ category.product_count }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ category.created_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="openDetailModal({{ category.id }}, '{{ category.name|escapejs }}', '{{ category.description|escapejs }}', '{{ category.created_at|date:"M d, Y H:i" }}', '{{ category.updated_at|date:"M d, Y H:i" }}')" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="View">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <button onclick="openEditModal({{ category.id }}, '{{ category.name|escapejs }}', '{{ category.description|escapejs }}')" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="openDeleteModal({{ category.id }}, '{{ category.name|escapejs }}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                </div>
+                                <p class="text-sm font-medium text-gray-900">No categories yet</p>
+                                <p class="text-sm text-gray-500 mt-1">Get started by creating your first category.</p>
+                                <button onclick="openCreateModal()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Add Category
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+            <div class="flex items-center gap-1.5">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Previous</span>
+                {% endif %}
+
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                    <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ page_num }}</span>
+                    {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+                    <a href="?page={{ page_num }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Next</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">Category Details</h3>
+            <button onclick="closeModal('detail-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Name</label>
+                <p id="detail-name" class="mt-1 text-base font-semibold text-gray-900"></p>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Description</label>
+                <p id="detail-description" class="mt-1 text-sm text-gray-600"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Created</label>
+                    <p id="detail-created" class="mt-1 text-sm text-gray-600"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Updated</label>
+                    <p id="detail-updated" class="mt-1 text-sm text-gray-600"></p>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+            <button onclick="closeModal('detail-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="form-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 id="form-modal-title" class="text-lg font-semibold text-gray-900">Add Category</h3>
+            <button onclick="closeModal('form-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="category-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="p-6 space-y-5">
+                <div>
+                    <label for="modal-name" class="block text-sm font-medium text-gray-700 mb-1.5">Category Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" id="modal-name" required
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400"
+                        placeholder="e.g. SENOVKA Products">
+                </div>
+                <div>
+                    <label for="modal-description" class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                    <textarea name="description" id="modal-description" rows="3"
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400 resize-none"
+                        placeholder="Brief description of this category..."></textarea>
+                </div>
+                <div id="form-errors" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3"></div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('form-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="form-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition">Save Category</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Category</h3>
+            <p class="text-sm text-gray-500">Are you sure you want to delete "<span id="delete-category-name" class="font-medium text-gray-700"></span>"? This action cannot be undone.</p>
+        </div>
+        <form id="delete-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-modal')" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Do not close modal on backdrop click.
+// User must use explicit controls (X/Cancel/Delete/Save) to close.
+document.querySelectorAll('.modal-backdrop').forEach(el => {
+    el.addEventListener('click', function(e) {
+        if (e.target === this) {
+            e.stopPropagation();
+        }
+    });
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        ['detail-modal', 'form-modal', 'delete-modal'].forEach(id => closeModal(id));
+    }
+});
+
+function openCreateModal() {
+    document.getElementById('form-modal-title').textContent = 'Add Category';
+    document.getElementById('form-submit-btn').textContent = 'Save Category';
+    document.getElementById('modal-name').value = '';
+    document.getElementById('modal-description').value = '';
+    document.getElementById('form-errors').classList.add('hidden');
+    document.getElementById('category-form').action = "{% url 'category_create' %}";
+    openModal('form-modal');
+    setTimeout(() => document.getElementById('modal-name').focus(), 100);
+}
+
+function openEditModal(id, name, description) {
+    document.getElementById('form-modal-title').textContent = 'Edit Category';
+    document.getElementById('form-submit-btn').textContent = 'Update Category';
+    document.getElementById('modal-name').value = name;
+    document.getElementById('modal-description').value = description;
+    document.getElementById('form-errors').classList.add('hidden');
+    document.getElementById('category-form').action = `/production/category/${id}/edit/`;
+    openModal('form-modal');
+    setTimeout(() => document.getElementById('modal-name').focus(), 100);
+}
+
+function openDetailModal(id, name, description, created, updated) {
+    document.getElementById('detail-name').textContent = name;
+    document.getElementById('detail-description').textContent = description || '—';
+    document.getElementById('detail-created').textContent = created;
+    document.getElementById('detail-updated').textContent = updated;
+    openModal('detail-modal');
+}
+
+function openDeleteModal(id, name) {
+    document.getElementById('delete-category-name').textContent = name;
+    document.getElementById('delete-form').action = `/production/category/${id}/delete/`;
+    openModal('delete-modal');
+}
+</script>
+{% endblock %}

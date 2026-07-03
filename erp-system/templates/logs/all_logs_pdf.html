@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>All Logs Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #1f2937;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0 0 6px 0;
+        }
+        .meta {
+            margin-bottom: 14px;
+        }
+        .meta p {
+            margin: 2px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            vertical-align: top;
+            text-align: left;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+        .empty {
+            padding: 10px;
+            border: 1px dashed #9ca3af;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Logs Report</h1>
+    <div class="meta">
+        <p><strong>Generated At:</strong> {{ generated_at|date:'d M Y, h:i A' }}</p>
+        <p><strong>Category:</strong> {{ selected_category_label }}</p>
+        <p><strong>Total Rows:</strong> {{ logs|length }}</p>
+    </div>
+
+    {% if logs %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 16%;">Timestamp</th>
+                <th style="width: 12%;">Category</th>
+                <th style="width: 12%;">Type</th>
+                <th style="width: 20%;">Title</th>
+                <th style="width: 40%;">Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.timestamp|date:'d M Y, h:i A' }}</td>
+                <td>{{ log.category|title }}</td>
+                <td>{{ log.kind|title|cut:'_' }}</td>
+                <td>{{ log.title }}</td>
+                <td>{{ log.message }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No logs found for selected filter.</div>
+    {% endif %}
+</body>
+</html>

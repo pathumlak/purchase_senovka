@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Task Board - ERP System{% endblock %}
+{% block page_title %}Task Board{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Task Board</h2>
+            <p class="mt-1 text-sm text-gray-500">Track tasks across To Do, In Progress, and Done</p>
+        </div>
+        {% if request.user.profile.is_superadmin %}
+        <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Task
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">To Do</p>
+                <p class="text-xl font-bold text-gray-900">{{ todo_count }}</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-blue-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">In Progress</p>
+                <p class="text-xl font-bold text-blue-700">{{ inprogress_count }}</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-green-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Done</p>
+                <p class="text-xl font-bold text-green-700">{{ done_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- TO DO -->
+        <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-2 px-1">
+                <span class="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">To Do</h3>
+                <span class="ml-auto text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{{ todo_count }}</span>
+            </div>
+            <div class="space-y-3 min-h-24">
+                {% for task in todo_tasks %}
+                {% include 'tasks/_task_card.html' with task=task %}
+                {% empty %}
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center text-sm text-gray-400">No tasks</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-2 px-1">
+                <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">In Progress</h3>
+                <span class="ml-auto text-xs font-semibold text-blue-600 bg-blue-50 rounded-full px-2 py-0.5">{{ inprogress_count }}</span>
+            </div>
+            <div class="space-y-3 min-h-24">
+                {% for task in inprogress_tasks %}
+                {% include 'tasks/_task_card.html' with task=task %}
+                {% empty %}
+                <div class="border-2 border-dashed border-blue-100 rounded-xl p-6 text-center text-sm text-gray-400">No tasks</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- DONE -->
+        <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-2 px-1">
+                <span class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Done</h3>
+                <span class="ml-auto text-xs font-semibold text-green-600 bg-green-50 rounded-full px-2 py-0.5">{{ done_count }}</span>
+            </div>
+            <div class="space-y-3 min-h-24">
+                {% for task in done_tasks %}
+                {% include 'tasks/_task_card.html' with task=task %}
+                {% empty %}
+                <div class="border-2 border-dashed border-green-100 rounded-xl p-6 text-center text-sm text-gray-400">No tasks</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Create Task Modal ───────────────────────────────── -->
+{% if request.user.profile.is_superadmin %}
+<div id="create-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">Add New Task</h3>
+            <button onclick="closeModal('create-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'task_create' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Title <span class="text-red-500">*</span></label>
+                    <input type="text" name="title" required placeholder="Task title" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                    <textarea name="description" rows="3" placeholder="Task description..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400 resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
+                        <select name="priority" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Due Date</label>
+                        <input type="date" name="due_date" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Assign To</label>
+                    <select name="assigned_to" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                        <option value="">Unassigned</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Image <span class="text-gray-400 text-xs">(optional)</span></label>
+                    <input type="file" name="image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('create-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Create Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Edit Task Modal ────────────────────────────────── -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">Edit Task</h3>
+            <button onclick="closeModal('edit-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="edit-form" method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Title <span class="text-red-500">*</span></label>
+                    <input type="text" name="title" id="edit-title" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                    <textarea name="description" id="edit-description" rows="3" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
+                        <select name="priority" id="edit-priority" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                        <select name="status" id="edit-status" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Due Date</label>
+                        <input type="date" name="due_date" id="edit-due-date" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Assign To</label>
+                        <select name="assigned_to" id="edit-assigned-to" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                            <option value="">Unassigned</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Image</label>
+                    <div id="edit-current-image" class="hidden mb-2">
+                        <img id="edit-image-preview" src="" alt="Current image" class="h-24 w-auto rounded-lg object-cover border border-gray-200">
+                        <label class="flex items-center gap-2 mt-2 text-xs text-red-600 cursor-pointer">
+                            <input type="checkbox" name="clear_image" value="1" class="rounded"> Remove current image
+                        </label>
+                    </div>
+                    <input type="file" name="image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('edit-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Delete Task Modal ──────────────────────────────── -->
+<div id="delete-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Task</h3>
+            <p class="text-sm text-gray-500">Are you sure you want to delete "<span id="delete-task-title" class="font-medium text-gray-700"></span>"?</p>
+        </div>
+        <form id="delete-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-modal')" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Image Lightbox ─────────────────────────────────── -->
+<div id="lightbox" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-pointer" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Task image" class="max-h-full max-w-full rounded-lg shadow-2xl object-contain">
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const IS_SUPERADMIN = {{ request.user.profile.is_superadmin|yesno:'true,false' }};
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') ['create-modal','edit-modal','delete-modal','lightbox'].forEach(closeModal);
+});
+
+function openCreateModal() { openModal('create-modal'); }
+
+function openEditModal(card) {
+    const d = card.dataset;
+    document.getElementById('edit-form').action = `/tasks/${d.id}/edit/`;
+    document.getElementById('edit-title').value       = d.title;
+    document.getElementById('edit-description').value = d.description;
+    document.getElementById('edit-priority').value    = d.priority;
+    document.getElementById('edit-status').value      = d.status;
+    document.getElementById('edit-due-date').value    = d.dueDate || '';
+    document.getElementById('edit-assigned-to').value = d.assignedTo || '';
+
+    const imgWrap = document.getElementById('edit-current-image');
+    const imgEl   = document.getElementById('edit-image-preview');
+    if (d.imageUrl) {
+        imgEl.src = d.imageUrl;
+        imgWrap.classList.remove('hidden');
+    } else {
+        imgWrap.classList.add('hidden');
+    }
+    openModal('edit-modal');
+}
+
+function openDeleteModal(card) {
+    const d = card.dataset;
+    document.getElementById('delete-task-title').textContent = d.title;
+    document.getElementById('delete-form').action = `/tasks/${d.id}/delete/`;
+    openModal('delete-modal');
+}
+
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    openModal('lightbox');
+}
+function closeLightbox() { closeModal('lightbox'); }
+
+function moveTask(taskId, newStatus, btn) {
+    btn.disabled = true;
+    fetch(`/tasks/${taskId}/status/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `status=${newStatus}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            window.location.reload();
+        } else {
+            btn.disabled = false;
+            alert('Failed to update status.');
+        }
+    })
+    .catch(() => { btn.disabled = false; alert('Network error.'); });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,685 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customers - ERP System{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Customers</h2>
+            <p class="mt-1 text-sm text-gray-500">Manage your customer database</p>
+        </div>
+        <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Customer
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Customers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_customers }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-50 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Credit Balances</p>
+                    <p class="text-xl font-bold text-green-600">Rs. {{ total_credit|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-red-50 rounded-lg">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Outstanding</p>
+                    <p class="text-xl font-bold text-red-600">Rs. {{ total_outstanding|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-50 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Custom Prices</p>
+                    <a href="{% url 'customer_pricing_list' %}" class="text-xl font-bold text-primary-600 hover:text-primary-700">Manage &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date filter (which customers were added when) -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <form method="get" class="flex items-center gap-2 flex-wrap">
+            <label class="text-xs font-medium text-gray-500">Added:</label>
+            <input type="date" name="date_from" value="{{ date_from }}"
+                   class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            <span class="text-xs text-gray-400">to</span>
+            <input type="date" name="date_to" value="{{ date_to }}"
+                   class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">Filter</button>
+            <a href="{% url 'customer_list' %}?date_from=&date_to=" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">All Time</a>
+            <p class="text-xs text-gray-400 ml-2">Showing {{ filtered_count }} of {{ total_customers }} customers, added in the current month by default.</p>
+        </form>
+    </div>
+
+    <!-- Customer Table -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+
+        <!-- Live Search Bar -->
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
+            <div class="relative flex-1 max-w-md">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                </svg>
+                <input type="text" id="customer-search"
+                       placeholder="Search by name or address…"
+                       autocomplete="off"
+                       class="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white placeholder-gray-400">
+                <button id="search-clear" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear search">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <span id="search-status" class="hidden text-xs text-gray-500 whitespace-nowrap"></span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
+                        <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance</th>
+                        {% if is_superadmin %}<th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Credit Limit</th>{% endif %}
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customer-table-body" class="divide-y divide-gray-200">
+                    {% for customer in customers %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-bold">
+                                    {{ customer.name|first|upper }}
+                                </div>
+                                <span class="text-sm font-semibold text-gray-900">{{ customer.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ customer.address|default:"—" }}</td>
+                        <!-- Unified Balance -->
+                        <td class="px-6 py-4 text-sm font-semibold text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                {% if customer.balance > 0 %}
+                                <span class="text-green-600" title="Credit — customer has advance payment">Rs. {{ customer.balance|floatformat:2 }} <span class="text-xs font-normal">(cr)</span></span>
+                                {% elif customer.balance < 0 %}
+                                <span class="text-red-600" title="Outstanding — customer owes this amount">Rs. {{ customer.balance|floatformat:2 }} <span class="text-xs font-normal">(due)</span></span>
+                                {% else %}
+                                <span class="text-gray-400">—</span>
+                                {% endif %}
+                                <button onclick="openQuickEdit('balance', {{ customer.id }}, '{{ customer.name|escapejs }}', '{{ customer.balance }}')"
+                                    class="p-1 text-gray-300 hover:text-primary-600 hover:bg-primary-50 rounded transition flex-shrink-0" title="Edit balance">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                        {% if is_superadmin %}
+                        <td class="px-6 py-4 text-sm text-right">
+                            {% if customer.max_outstanding_limit %}
+                            <span class="text-orange-600 font-semibold">Rs. {{ customer.max_outstanding_limit|floatformat:2 }}</span>
+                            {% else %}
+                            <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ customer.created_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="{% url 'customer_ledger' customer.id %}"
+                                    class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="View Ledger">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </a>
+                                <button onclick="openDetailModal({{ customer.id }}, '{{ customer.name|escapejs }}', '{{ customer.address|escapejs }}', '{{ customer.balance }}', '{{ customer.max_outstanding_limit|default:"" }}', '{{ customer.created_at|date:"M d, Y H:i" }}', '{{ customer.updated_at|date:"M d, Y H:i" }}')"
+                                    class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="View">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <button onclick="openEditModal({{ customer.id }}, '{{ customer.name|escapejs }}', '{{ customer.address|escapejs }}', '{{ customer.balance }}', '{{ customer.max_outstanding_limit|default:"" }}')"
+                                    class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                {% if customer.balance < 0 %}
+                                <a href="{% url 'customer_settle_balance' customer.id %}"
+                                    class="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Settle Balance">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </a>
+                                {% endif %}
+                                <button onclick="openDeleteModal({{ customer.id }}, '{{ customer.name|escapejs }}')"
+                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if is_superadmin %}6{% else %}5{% endif %}" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <p class="text-sm font-medium text-gray-900">No customers yet</p>
+                                <p class="text-sm text-gray-500 mt-1">Get started by adding your first customer.</p>
+                                <button onclick="openCreateModal()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Add Customer
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div id="pagination-section" class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+            <div class="flex items-center gap-1.5">
+                {% if page_obj.has_previous %}
+                <a href="?date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Previous</span>
+                {% endif %}
+
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                    <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ page_num }}</span>
+                    {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+                    <a href="?date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_num }}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Next</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Edit Balance Modal -->
+<div id="quick-edit-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-xs" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div>
+                <h3 id="qe-title" class="text-sm font-semibold text-gray-900"></h3>
+                <p id="qe-customer" class="text-xs text-gray-400 mt-0.5 truncate"></p>
+            </div>
+            <button onclick="closeModal('quick-edit-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="quick-edit-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="px-5 py-4">
+                <label id="qe-label" class="block text-xs font-medium text-gray-500 mb-1.5"></label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rs.</span>
+                    <input type="number" id="qe-input" name="__placeholder__" step="0.01"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <p id="qe-hint" class="mt-1.5 text-xs hidden"></p>
+            </div>
+            <div class="flex gap-2 px-5 pb-4">
+                <button type="button" onclick="closeModal('quick-edit-modal')"
+                    class="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="qe-submit"
+                    class="flex-1 px-3 py-2 text-sm font-medium text-white rounded-lg transition">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">Customer Details</h3>
+            <button onclick="closeModal('detail-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Name</label>
+                <p id="detail-name" class="mt-1 text-base font-semibold text-gray-900"></p>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Address</label>
+                <p id="detail-address" class="mt-1 text-sm text-gray-600"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Balance</label>
+                    <p id="detail-balance" class="mt-1 text-lg font-bold"></p>
+                    <p id="detail-balance-label" class="text-xs mt-0.5"></p>
+                </div>
+                <div id="detail-limit-wrap" class="hidden">
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Outstanding Limit</label>
+                    <p id="detail-limit" class="mt-1 text-lg font-bold text-orange-600"></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Created</label>
+                    <p id="detail-created" class="mt-1 text-sm text-gray-600"></p>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-gray-400 uppercase tracking-wider">Updated</label>
+                    <p id="detail-updated" class="mt-1 text-sm text-gray-600"></p>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+            <button onclick="closeModal('detail-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="form-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 id="form-modal-title" class="text-lg font-semibold text-gray-900">Add Customer</h3>
+            <button onclick="closeModal('form-modal')" class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="customer-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="p-6 space-y-5">
+                <div>
+                    <label for="modal-name" class="block text-sm font-medium text-gray-700 mb-1.5">Customer Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" id="modal-name" required
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400"
+                        placeholder="e.g. Sunil Trading">
+                </div>
+                <div>
+                    <label for="modal-address" class="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
+                    <textarea name="address" id="modal-address" rows="3"
+                        class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400 resize-none"
+                        placeholder="Customer address..."></textarea>
+                </div>
+                <div>
+                    <label for="modal-balance" class="block text-sm font-medium text-gray-700 mb-1">
+                        Balance
+                        <span class="ml-1 text-xs font-normal text-gray-400">(positive = credit &nbsp;|&nbsp; negative = owes)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rs.</span>
+                        <input type="number" name="balance" id="modal-balance" step="0.01" value="0"
+                            class="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400"
+                            placeholder="0.00">
+                    </div>
+                    <p id="balance-hint" class="mt-1 text-xs text-gray-400 hidden"></p>
+                </div>
+                {% if is_superadmin %}
+                <div id="limit-field-wrap">
+                    <label for="modal-limit" class="block text-sm font-medium text-gray-700 mb-1">
+                        Max Outstanding Limit
+                        <span class="ml-1 text-xs font-normal text-gray-400">(leave blank for no limit)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rs.</span>
+                        <input type="number" name="max_outstanding_limit" id="modal-limit" step="0.01" min="0"
+                            class="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition placeholder-gray-400"
+                            placeholder="e.g. 50000.00">
+                    </div>
+                    <p class="mt-1 text-xs text-orange-600">PAY_LATER bills are blocked when outstanding exceeds this limit.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('form-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="form-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition">Save Customer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm" onclick="event.stopPropagation()">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Customer</h3>
+            <p class="text-sm text-gray-500">Are you sure you want to delete "<span id="delete-customer-name" class="font-medium text-gray-700"></span>"? This will also remove all their custom pricing. This action cannot be undone.</p>
+        </div>
+        <form id="delete-form" method="POST" action="">
+            {% csrf_token %}
+            <div class="flex gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeModal('delete-modal')" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Modal helpers ── */
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') ['detail-modal', 'form-modal', 'delete-modal'].forEach(id => closeModal(id));
+});
+
+/* ── Balance input hint ── */
+function updateBalanceHint() {
+    const val = parseFloat(document.getElementById('modal-balance').value) || 0;
+    const hint = document.getElementById('balance-hint');
+    if (val < 0) {
+        hint.textContent = 'Customer owes Rs. ' + Math.abs(val).toFixed(2);
+        hint.className = 'mt-1 text-xs text-red-500 font-medium';
+        hint.classList.remove('hidden');
+    } else if (val > 0) {
+        hint.textContent = 'Customer has Rs. ' + val.toFixed(2) + ' credit';
+        hint.className = 'mt-1 text-xs text-green-600 font-medium';
+        hint.classList.remove('hidden');
+    } else {
+        hint.classList.add('hidden');
+    }
+}
+document.getElementById('modal-balance').addEventListener('input', updateBalanceHint);
+
+/* ── Create / Edit / Detail / Delete modal openers ── */
+function openCreateModal() {
+    document.getElementById('form-modal-title').textContent = 'Add Customer';
+    document.getElementById('form-submit-btn').textContent = 'Save Customer';
+    document.getElementById('modal-name').value = '';
+    document.getElementById('modal-address').value = '';
+    document.getElementById('modal-balance').value = '0';
+    document.getElementById('balance-hint').classList.add('hidden');
+    const limitEl = document.getElementById('modal-limit');
+    if (limitEl) limitEl.value = '';
+    document.getElementById('customer-form').action = "{% url 'customer_create' %}";
+    openModal('form-modal');
+    setTimeout(() => document.getElementById('modal-name').focus(), 100);
+}
+
+function openEditModal(id, name, address, balance, limit) {
+    document.getElementById('form-modal-title').textContent = 'Edit Customer';
+    document.getElementById('form-submit-btn').textContent = 'Update Customer';
+    document.getElementById('modal-name').value = name;
+    document.getElementById('modal-address').value = address;
+    document.getElementById('modal-balance').value = balance;
+    const limitEl = document.getElementById('modal-limit');
+    if (limitEl) limitEl.value = limit || '';
+    document.getElementById('customer-form').action = `/customers/${id}/edit/`;
+    updateBalanceHint();
+    openModal('form-modal');
+    setTimeout(() => document.getElementById('modal-name').focus(), 100);
+}
+
+function openDetailModal(id, name, address, balance, limit, created, updated) {
+    document.getElementById('detail-name').textContent = name;
+    document.getElementById('detail-address').textContent = address || '—';
+
+    const balEl   = document.getElementById('detail-balance');
+    const labelEl = document.getElementById('detail-balance-label');
+    const bal = parseFloat(balance) || 0;
+    if (bal > 0) {
+        balEl.textContent  = 'Rs. ' + bal.toFixed(2);
+        balEl.className    = 'mt-1 text-lg font-bold text-green-600';
+        labelEl.textContent = 'Credit — we owe customer';
+        labelEl.className   = 'text-xs mt-0.5 text-green-500';
+    } else if (bal < 0) {
+        balEl.textContent  = 'Rs. ' + Math.abs(bal).toFixed(2);
+        balEl.className    = 'mt-1 text-lg font-bold text-red-600';
+        labelEl.textContent = 'Outstanding — customer owes us';
+        labelEl.className   = 'text-xs mt-0.5 text-red-500';
+    } else {
+        balEl.textContent  = '—';
+        balEl.className    = 'mt-1 text-lg font-bold text-gray-400';
+        labelEl.textContent = '';
+    }
+
+    const limitWrap = document.getElementById('detail-limit-wrap');
+    const limitEl   = document.getElementById('detail-limit');
+    if (limit) {
+        limitWrap.classList.remove('hidden');
+        limitEl.textContent = 'Rs. ' + parseFloat(limit).toFixed(2);
+    } else {
+        limitWrap.classList.add('hidden');
+    }
+
+    document.getElementById('detail-created').textContent = created;
+    document.getElementById('detail-updated').textContent = updated;
+    openModal('detail-modal');
+}
+
+function openDeleteModal(id, name) {
+    document.getElementById('delete-customer-name').textContent = name;
+    document.getElementById('delete-form').action = `/customers/${id}/delete/`;
+    openModal('delete-modal');
+}
+
+
+function openQuickEdit(type, id, name, currentValue) {
+    document.getElementById('qe-title').textContent    = 'Edit Balance';
+    document.getElementById('qe-customer').textContent = name;
+    document.getElementById('qe-label').textContent    = 'Balance (positive = credit, negative = owes)';
+    document.getElementById('qe-input').name           = 'balance';
+    document.getElementById('qe-input').value          = currentValue;
+    document.getElementById('qe-submit').className     = 'flex-1 px-3 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition';
+    document.getElementById('quick-edit-form').action  = `/customers/${id}/update-balance/`;
+    updateQeHint();
+    openModal('quick-edit-modal');
+    setTimeout(() => document.getElementById('qe-input').select(), 100);
+}
+
+document.getElementById('qe-input').addEventListener('input', updateQeHint);
+
+function updateQeHint() {
+    const val  = parseFloat(document.getElementById('qe-input').value) || 0;
+    const hint = document.getElementById('qe-hint');
+    if (val < 0) {
+        hint.textContent = 'Customer owes Rs. ' + Math.abs(val).toFixed(2);
+        hint.className = 'mt-1.5 text-xs text-red-500 font-medium';
+        hint.classList.remove('hidden');
+    } else if (val > 0) {
+        hint.textContent = 'Customer has Rs. ' + val.toFixed(2) + ' credit';
+        hint.className = 'mt-1.5 text-xs text-green-600 font-medium';
+        hint.classList.remove('hidden');
+    } else {
+        hint.classList.add('hidden');
+    }
+}
+
+/* ── Live customer search ── */
+(function () {
+    const searchInput  = document.getElementById('customer-search');
+    const clearBtn     = document.getElementById('search-clear');
+    const statusEl     = document.getElementById('search-status');
+    const tbody        = document.getElementById('customer-table-body');
+    const pagination   = document.getElementById('pagination-section');
+
+    /* Snapshot of original paginated rows so we can restore them */
+    const originalRows = tbody ? tbody.innerHTML : '';
+
+    let debounceTimer = null;
+
+    function fmtBalance(val) {
+        const n = parseFloat(val) || 0;
+        if (n > 0) return { text: 'Rs. ' + n.toFixed(2) + ' (cr)', cls: 'text-green-600' };
+        if (n < 0) return { text: 'Rs. ' + n.toFixed(2) + ' (due)', cls: 'text-red-600' };
+        return { text: '—', cls: 'text-gray-400' };
+    }
+
+    /* Store customer data keyed by id so event delegation can look them up safely */
+    const customerCache = {};
+
+    function buildRow(c) {
+        const initial = c.name.charAt(0).toUpperCase();
+        const bal = fmtBalance(c.balance);
+        customerCache[c.id] = c;
+
+        return `<tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-bold">${escHtml(initial)}</div>
+                    <span class="text-sm font-semibold text-gray-900">${escHtml(c.name)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${escHtml(c.address || '—')}</td>
+            <td class="px-6 py-4 text-sm font-semibold text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                    <span class="${bal.cls}">${bal.text}</span>
+                    <button data-action="edit-balance" data-id="${c.id}"
+                        class="p-1 text-gray-300 hover:text-primary-600 hover:bg-primary-50 rounded transition flex-shrink-0" title="Edit balance">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">${escHtml(c.created_at)}</td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-1">
+                    <a href="/customers/${c.id}/ledger/"
+                        class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="View Ledger">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </a>
+                    <button data-action="view" data-id="${c.id}"
+                        class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="View">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                    <button data-action="edit" data-id="${c.id}"
+                        class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    ${parseFloat(c.balance) < 0 ? `<a href="/customers/${c.id}/settle/"
+                        class="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Settle Balance">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </a>` : ''}
+                    <button data-action="delete" data-id="${c.id}"
+                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    /* Single delegated listener on the tbody handles all search-result buttons */
+    if (tbody) {
+        tbody.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            const c  = customerCache[id];
+            const action = btn.dataset.action;
+            if (action === 'view' && c)        openDetailModal(c.id, c.name, c.address, c.balance, c.max_outstanding_limit || '', c.created_at, c.updated_at);
+            if (action === 'edit' && c)         openEditModal(c.id, c.name, c.address, c.balance, c.max_outstanding_limit || '');
+            if (action === 'delete' && c)       openDeleteModal(c.id, c.name);
+            if (action === 'edit-balance' && c) openQuickEdit('balance', c.id, c.name, c.balance);
+        });
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function showNoResults(q) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center">
+                <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                </svg>
+                <p class="text-sm font-medium text-gray-900">No customers found</p>
+                <p class="text-xs text-gray-500 mt-1">No results for "<span class="font-medium">${escHtml(q)}</span>"</p>
+            </div>
+        </td></tr>`;
+    }
+
+    function restoreOriginal() {
+        if (tbody) tbody.innerHTML = originalRows;
+        if (pagination) pagination.style.display = '';
+        statusEl.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+    }
+
+    function doSearch(q) {
+        if (!q) { restoreOriginal(); return; }
+
+        fetch(`/customers/api/search/?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (pagination) pagination.style.display = 'none';
+
+                if (data.customers.length === 0) {
+                    showNoResults(q);
+                    statusEl.textContent = 'No results';
+                } else {
+                    tbody.innerHTML = data.customers.map(buildRow).join('');
+                    statusEl.textContent = data.count + ' result' + (data.count !== 1 ? 's' : '');
+                }
+                statusEl.classList.remove('hidden');
+            })
+            .catch(() => {
+                statusEl.textContent = 'Search error';
+                statusEl.classList.remove('hidden');
+            });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const q = this.value.trim();
+            clearBtn.classList.toggle('hidden', !q);
+            clearTimeout(debounceTimer);
+            if (!q) { restoreOriginal(); return; }
+            debounceTimer = setTimeout(() => doSearch(q), 280);
+        });
+
+        clearBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            this.classList.add('hidden');
+            restoreOriginal();
+            searchInput.focus();
+        });
+    }
+})();
+</script>
+{% endblock %}

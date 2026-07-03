@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 9px; color: #111; margin: 16px; }
+  h1 { font-size: 13px; margin-bottom: 3px; }
+  .sub { color: #666; font-size: 9px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1d4ed8; color: #fff; padding: 4px 5px; text-align: left; font-size: 8px; }
+  td { padding: 3px 5px; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .badge-green { background: #dcfce7; color: #15803d; padding: 1px 4px; border-radius: 8px; font-weight: bold; }
+  .badge-red { background: #fee2e2; color: #b91c1c; padding: 1px 4px; border-radius: 8px; font-weight: bold; }
+  .num { text-align: right; }
+</style>
+</head>
+<body>
+<h1>Shift Production Log — {{ month }}</h1>
+<p class="sub">Generated: {{ generated_at|date:"d M Y H:i" }}</p>
+<table>
+  <thead>
+    <tr>
+      <th>Start</th><th>End</th><th>Employee</th><th>Machine</th><th>Item</th>
+      <th class="num">Cav</th><th class="num">Cycle</th>
+      <th class="num">Target</th><th class="num">Actual</th>
+      <th class="num">DT</th><th>Reason</th><th>Penalty</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.shift_start|date:"d/m H:i" }}</td>
+      <td>{{ log.shift_end|date:"d/m H:i" }}</td>
+      <td>{{ log.employee.name }}</td>
+      <td>{{ log.machine_no }}</td>
+      <td>{{ log.item_name }}</td>
+      <td class="num">{{ log.cavity }}</td>
+      <td class="num">{{ log.cycle_time_seconds }}</td>
+      <td class="num">{{ log.target_qty }}</td>
+      <td class="num">{{ log.actual_qty }}</td>
+      <td class="num">{{ log.downtime_minutes }}</td>
+      <td>{{ log.downtime_reason|default:"-" }}</td>
+      <td><span class="{% if log.penalty_points == 0 %}badge-green{% else %}badge-red{% endif %}">{{ log.penalty_points }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="12">No entries.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</body>
+</html>

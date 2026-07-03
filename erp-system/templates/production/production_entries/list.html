@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Production Entries — ERP System{% endblock %}
+{% block page_title %}Production Entries{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Daily Production</h2>
+      <p class="mt-1 text-sm text-gray-500">Record and track daily production quantity updates</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'production_entry_export_excel' %}{% if date_from or date_to or product_id or category_id %}?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if product_id %}product={{ product_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}{% endif %}"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Excel
+      </a>
+      <a href="{% url 'production_entry_export_pdf' %}{% if date_from or date_to or product_id or category_id %}?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if product_id %}product={{ product_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}{% endif %}"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        PDF
+      </a>
+      <button onclick="document.getElementById('addEntryModal').classList.remove('hidden')"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Production
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary card -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Total Records</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ page_obj.paginator.count }}</p>
+    </div>
+    <div class="bg-green-50 border border-green-100 rounded-xl p-5">
+      <p class="text-sm text-green-600">Total Units Added</p>
+      <p class="text-2xl font-bold text-green-700 mt-1">{{ total_added|floatformat:0 }}</p>
+    </div>
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+      <p class="text-sm text-blue-600">Products</p>
+      <p class="text-2xl font-bold text-blue-700 mt-1">{{ products.count }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+        <input type="date" name="date_from" value="{{ date_from }}"
+               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+        <select name="category" id="filter-category"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Product</label>
+        <select name="product"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Products</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if product_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}{% if p.size %} ({{ p.size }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+        Filter
+      </button>
+      <a href="{% url 'production_entry_list' %}?date_from=&date_to=" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+        All Time
+      </a>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Showing the current month by default.</p>
+  </form>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-gray-700">Production History</h3>
+      <span class="text-xs text-gray-400">{{ page_obj.paginator.count }} record{{ page_obj.paginator.count|pluralize }}</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-green-600 uppercase tracking-wider">Qty Added</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Before</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-blue-600 uppercase tracking-wider">After</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Notes</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">By</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for entry in entries %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-700">{{ entry.date|date:"d M Y" }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">{{ entry.product.category.name }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="font-semibold text-gray-900">{{ entry.product.name }}</span>
+              {% if entry.product.size %}<span class="text-xs text-gray-400 ml-1">({{ entry.product.size }})</span>{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <span class="text-green-600 font-bold">+{{ entry.qty_added|floatformat:0 }}</span>
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap text-gray-500">{{ entry.qty_before|floatformat:0 }}</td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <span class="text-blue-600 font-semibold">{{ entry.qty_after|floatformat:0 }}</span>
+            </td>
+            <td class="px-4 py-3 text-gray-500 max-w-xs truncate">{{ entry.notes|default:"—" }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-400">
+              {% if entry.created_by %}{{ entry.created_by.get_full_name|default:entry.created_by.username }}{% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" onclick="document.getElementById('edit-entry-modal-{{ entry.pk }}').classList.remove('hidden')"
+                        class="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition" title="Edit entry">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <form method="post" action="{% url 'production_entry_delete' entry.pk %}"
+                      onsubmit="return confirm('Delete this entry? The quantity will be reversed.')">
+                  {% csrf_token %}
+                  <button type="submit" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete & reverse qty">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500">No production entries yet</p>
+                <button onclick="document.getElementById('addEntryModal').classList.remove('hidden')"
+                        class="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Add First Entry
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
+      <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+      <div class="flex gap-1">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+           class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+           class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Edit Production Entry Modals (kept outside the table for valid markup) -->
+{% for entry in entries %}
+<div id="edit-entry-modal-{{ entry.pk }}" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4" onclick="if (event.target === this) this.classList.add('hidden')">
+  <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-900">Edit Production Entry</h3>
+      <button onclick="document.getElementById('edit-entry-modal-{{ entry.pk }}').classList.add('hidden')"
+              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form method="post" action="{% url 'production_entry_edit' entry.pk %}" class="p-6 space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+        <p class="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-600">
+          {{ entry.product.name }}{% if entry.product.size %} ({{ entry.product.size }}){% endif %}
+        </p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+        <input type="date" name="date" value="{{ entry.date|date:'Y-m-d' }}" required
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Quantity Added <span class="text-red-500">*</span></label>
+        <input type="number" name="qty_added" value="{{ entry.qty_added|floatformat:2 }}" min="0.01" step="0.01" required
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+        <p class="text-xs text-gray-400 mt-1">Changing this adjusts {{ entry.product.name }}'s current stock by the difference.</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <input type="text" name="notes" value="{{ entry.notes }}" placeholder="Optional notes…"
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Save</button>
+        <button type="button" onclick="document.getElementById('edit-entry-modal-{{ entry.pk }}').classList.add('hidden')"
+                class="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Production Entry Modal -->
+<div id="addEntryModal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4" onclick="if (event.target === this) this.classList.add('hidden')">
+  <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-900">Add Production Entry</h3>
+      <button onclick="document.getElementById('addEntryModal').classList.add('hidden')"
+              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form method="post" action="{% url 'production_entry_create' %}" class="p-6 space-y-4">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+        <input type="date" name="date" value="{{ today|date:'Y-m-d' }}" required
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <select id="modal-category" onchange="filterModalProducts()"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Product <span class="text-red-500">*</span></label>
+        <select name="product" id="modal-product" required
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">Select product…</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" data-category="{{ p.category_id }}" data-qty="{{ p.qty|floatformat:0 }}">
+            {{ p.name }}{% if p.size %} ({{ p.size }}){% endif %} — Current: {{ p.qty|floatformat:0 }}
+          </option>
+          {% endfor %}
+        </select>
+        <p id="current-qty-hint" class="text-xs text-gray-400 mt-1"></p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Quantity Added <span class="text-red-500">*</span></label>
+        <input type="number" name="qty_added" min="0.01" step="0.01" required placeholder="e.g. 50"
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <input type="text" name="notes" placeholder="Optional notes…"
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+          Save Entry
+        </button>
+        <button type="button" onclick="document.getElementById('addEntryModal').classList.add('hidden')"
+                class="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function filterModalProducts() {
+  const catId = document.getElementById('modal-category').value;
+  const sel   = document.getElementById('modal-product');
+  sel.value   = '';
+  document.getElementById('current-qty-hint').textContent = '';
+  for (const opt of sel.options) {
+    if (!opt.value) { opt.hidden = false; continue; }
+    opt.hidden = catId ? opt.dataset.category !== catId : false;
+  }
+}
+
+document.getElementById('modal-product').addEventListener('change', function () {
+  const opt = this.options[this.selectedIndex];
+  const hint = document.getElementById('current-qty-hint');
+  if (opt.value) {
+    hint.textContent = `Current stock: ${opt.dataset.qty} units`;
+  } else {
+    hint.textContent = '';
+  }
+});
+
+// ── Close any open modal on Escape ──────────────────────────────
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.add('hidden'));
+});
+</script>
+{% endblock %}

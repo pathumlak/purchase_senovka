@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Held Bills - ERP System{% endblock %}
+{% block page_title %}Held Bills{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Held Bills</h2>
+      <p class="mt-1 text-sm text-gray-500">Parked carts — items chosen but not yet paid for. Recall to resume on any terminal.</p>
+    </div>
+    <a href="{% url 'billing:bill_create' %}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Create New Bill
+    </a>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Customer</th>
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Held At</th>
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Held By</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Items</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for hold in holds %}
+          <tr class="hover:bg-amber-50 transition-colors">
+            <td class="px-4 py-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ hold.customer_name|default:"?"|first|upper }}</div>
+                <span class="text-sm text-gray-900">{{ hold.customer_name|default:"Walk-in" }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{{ hold.created_at|date:"d M Y, h:i A" }}</td>
+            <td class="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{{ hold.held_by.get_full_name|default:hold.held_by.username|default:"—" }}</td>
+            <td class="px-4 py-4 text-right text-sm text-gray-600">{{ hold.item_count }}</td>
+            <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900">Rs. {{ hold.total_amount|floatformat:2 }}</td>
+            <td class="px-4 py-4 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <form method="POST" action="{% url 'billing:held_bill_recall' hold.pk %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" title="Recall into a new bill">
+                    Recall
+                  </button>
+                </form>
+                <form method="POST" action="{% url 'billing:held_bill_delete' hold.pk %}" class="inline"
+                      onsubmit="return confirm('Discard this held bill? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Discard">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-1.414 1.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 006.586 13H4"/></svg>
+                </div>
+                <p class="text-sm font-medium text-gray-900">No held bills</p>
+                <p class="text-sm text-gray-400 mt-1">Bills parked from the "Hold Bill" button on the Create Bill page will show up here.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

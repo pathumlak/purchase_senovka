@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}{{ bill.bill_number }} - ERP System{% endblock %}
+{% block page_title %}Bill {{ bill.bill_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <!-- Back + actions -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <a href="{% url 'billing:bill_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>All Bills
+    </a>
+    <div class="flex gap-2 flex-wrap">
+      {% if is_superadmin and bill.status != 'CANCELLED' %}
+      <a href="{% url 'billing:bill_edit' bill.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-violet-200 bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Edit Bill
+      </a>
+      {% endif %}
+      <a href="{% url 'billing:bill_print' bill.pk %}" target="_blank"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-blue-200 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Print
+      </a>
+      {% if bill.is_pending %}
+      <a href="{% url 'billing:settle_bill' bill.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Settle Payment
+      </a>
+      <a href="{% url 'billing:bill_cancel' bill.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Cancel Bill
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Header card -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <h2 class="text-2xl font-bold text-gray-900">{{ bill.bill_number }}</h2>
+          {% if bill.status == 'COMPLETED' %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Completed</span>
+          {% elif bill.status == 'PENDING' %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Pending</span>
+          {% else %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Cancelled</span>
+          {% endif %}
+        </div>
+        <p class="mt-1 text-sm text-gray-500">{{ bill.bill_date|date:"d F Y" }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-3xl font-bold text-gray-900">Rs. {{ bill.total_amount|floatformat:2 }}</p>
+        {% if bill.amount_due > 0 %}
+        <p class="text-sm font-semibold text-red-600 mt-0.5">Due: Rs. {{ bill.amount_due|floatformat:2 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 border-t border-gray-100">
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Customer</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ bill.customer.name }}</p>
+      </div>
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Payment Method</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ bill.get_payment_method_display }}</p>
+      </div>
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Balance Used</p>
+        <p class="mt-1 text-sm font-semibold text-primary-700">Rs. {{ bill.balance_used|floatformat:2 }}</p>
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Created By</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ bill.created_by.get_full_name|default:bill.created_by.username|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <h3 class="text-sm font-semibold text-gray-700">Products</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Unit Price</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc %</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc Amt</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Line Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for item in bill.items.all %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3">
+              <p class="text-sm font-medium text-gray-900">{{ item.product.name }}</p>
+              <p class="text-xs text-gray-400">{{ item.product.category.name }}</p>
+            </td>
+            <td class="px-4 py-3 text-right text-sm text-gray-700">{{ item.quantity|floatformat:3 }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-700">Rs. {{ item.unit_price|floatformat:2 }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-500">{{ item.discount_percent|floatformat:2 }}%</td>
+            <td class="px-4 py-3 text-right text-sm text-red-500">Rs. {{ item.discount_amount|floatformat:2 }}</td>
+            <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">Rs. {{ item.line_total|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="bg-gray-50">
+          <tr>
+            <td colspan="4" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Subtotal</td>
+            <td colspan="2" class="px-4 py-3 text-right text-sm font-semibold text-gray-900">Rs. {{ bill.subtotal|floatformat:2 }}</td>
+          </tr>
+          {% if bill.discount_amount > 0 %}
+          <tr>
+            <td colspan="4" class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total Discount</td>
+            <td colspan="2" class="px-4 py-2 text-right text-sm font-semibold text-red-600">− Rs. {{ bill.discount_amount|floatformat:2 }}</td>
+          </tr>
+          {% endif %}
+          <tr class="border-t-2 border-gray-200">
+            <td colspan="4" class="px-4 py-3 text-right text-sm font-bold text-gray-700">Total</td>
+            <td colspan="2" class="px-4 py-3 text-right text-base font-bold text-gray-900">Rs. {{ bill.total_amount|floatformat:2 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payments -->
+  {% if bill.payments.all %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <h3 class="text-sm font-semibold text-gray-700">Payment History</h3>
+    </div>
+    <div class="divide-y divide-gray-100">
+      {% for p in bill.payments.all %}
+      <div class="px-6 py-4 flex items-start justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg {% if p.method == 'CASH' %}bg-green-50{% elif p.method == 'CHEQUE' %}bg-blue-50{% else %}bg-purple-50{% endif %}">
+            {% if p.method == 'CASH' %}
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            {% elif p.method == 'CHEQUE' %}
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            {% else %}
+            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {% endif %}
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-900">{{ p.get_method_display }}</p>
+            <p class="text-xs text-gray-500">{{ p.payment_date|date:"d M Y" }}</p>
+            {% if p.method == 'CHEQUE' %}
+            <p class="text-xs text-gray-500 mt-0.5">
+              Cheque #{{ p.cheque_number }} — {{ p.bank_name }}{% if p.branch_name %} ({{ p.branch_name }}){% endif %}
+              {% if p.maturity_date %} · Matures {{ p.maturity_date|date:"d M Y" }}{% endif %}
+            </p>
+            {% if p.cheque_status %}
+            <span class="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full font-medium
+              {% if p.cheque_status == 'CLEARED' %}bg-green-100 text-green-700
+              {% elif p.cheque_status == 'BOUNCED' %}bg-red-100 text-red-700
+              {% else %}bg-amber-100 text-amber-700{% endif %}">
+              {{ p.get_cheque_status_display }}
+            </span>
+            {% endif %}
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <p class="text-sm font-bold {% if p.method == 'BALANCE' %}text-purple-700{% else %}text-gray-900{% endif %}">Rs. {{ p.amount|floatformat:2 }}</p>
+          {% if p.method == 'CHEQUE' and bill.status != 'CANCELLED' %}
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button type="button" onclick="document.getElementById('chq-dates-modal-{{ p.pk }}').classList.remove('hidden')"
+                    title="Edit received/maturity date" class="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            {% if is_superadmin %}
+            <form method="POST" action="{% url 'billing:payment_delete' p.pk %}"
+                  onsubmit="return confirm('Delete cheque {{ p.cheque_number|default:p.pk }}? Rs. {{ p.amount|floatformat:2 }} will be reversed from the bill/customer balance.');">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" title="Delete cheque" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% if p.method == 'CHEQUE' and bill.status != 'CANCELLED' %}
+      <div id="chq-dates-modal-{{ p.pk }}" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900">Edit Cheque Dates</h3>
+            <button onclick="document.getElementById('chq-dates-modal-{{ p.pk }}').classList.add('hidden')"
+                    class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <form method="POST" action="{% url 'billing:payment_update_dates' p.pk %}" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Received Date</label>
+              <input type="date" name="received_date" value="{{ p.received_date|date:'Y-m-d' }}"
+                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Maturity Date <span class="text-red-500">*</span></label>
+              <input type="date" name="maturity_date" value="{{ p.maturity_date|date:'Y-m-d' }}" required
+                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button type="submit" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Save</button>
+              <button type="button" onclick="document.getElementById('chq-dates-modal-{{ p.pk }}').classList.add('hidden')"
+                      class="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <!-- Payment totals -->
+    <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-6 text-sm">
+      <div><span class="text-gray-500">Balance Used:</span> <span class="font-semibold text-purple-700">Rs. {{ bill.balance_used|floatformat:2 }}</span></div>
+      <div><span class="text-gray-500">Cash/Cheque Paid:</span> <span class="font-semibold text-gray-900">Rs. {{ bill.amount_paid|floatformat:2 }}</span></div>
+      {% if bill.amount_due > 0 %}
+      <div><span class="text-gray-500">Still Due:</span> <span class="font-semibold text-red-600">Rs. {{ bill.amount_due|floatformat:2 }}</span></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if bill.notes %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+    <p class="text-sm text-gray-700">{{ bill.notes }}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

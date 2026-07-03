@@ -1,0 +1,811 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ERP System{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+                        accent: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ── Base font scale (tablet / laptop / desktop) ── */
+        @media (min-width: 768px)  { html { font-size: 17px; } }
+        @media (min-width: 1024px) { html { font-size: 17.5px; } }
+
+        .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-enter { animation: modalIn 0.2s ease-out; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes dropIn { from { opacity: 0; transform: scale(0.95) translateY(-6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        /* ── Dark Sidebar ───────────────────────── */
+        #sidebar {
+            background: #0f1117;
+            border-right: 1px solid rgba(255,255,255,.07);
+        }
+        .sidebar-logo {
+            display: flex; align-items: center; gap: 10px;
+            height: 64px; padding: 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            text-decoration: none;
+        }
+        .sidebar-logo-icon {
+            width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+            background: linear-gradient(135deg, #c9a84c 0%, #b8963f 100%);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(201,168,76,.35);
+        }
+        .sidebar-logo-icon svg { width: 18px; height: 18px; color: #fff; }
+        .sidebar-logo-text { line-height: 1.15; }
+        .sidebar-logo-name {
+            font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #fff;
+        }
+        .sidebar-logo-sub {
+            font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+            color: rgba(255,255,255,.45); font-weight: 500;
+        }
+        .sidebar-nav { flex: 1; overflow-y: auto; padding: 16px 12px; }
+        .sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 99px; }
+        .sidebar-section {
+            font-size: 11px; font-weight: 700; letter-spacing: .13em;
+            text-transform: uppercase; color: rgba(255,255,255,.45);
+            padding: 0 10px; margin: 20px 0 6px;
+        }
+        .sidebar-section:first-child { margin-top: 4px; }
+        .sidebar-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 8px;
+            font-size: 14px; font-weight: 500;
+            color: rgba(255,255,255,.82);
+            text-decoration: none;
+            transition: background .15s, color .15s;
+            margin-bottom: 1px;
+        }
+        .sidebar-link svg { width: 17px; height: 17px; flex-shrink: 0; opacity: .85; transition: opacity .15s; }
+        .sidebar-link:hover { background: rgba(255,255,255,.09); color: #fff; }
+        .sidebar-link:hover svg { opacity: 1; }
+        .sidebar-link.active {
+            background: rgba(201,168,76,.15);
+            color: #c9a84c;
+        }
+        .sidebar-link.active svg { opacity: 1; color: #c9a84c; }
+
+        /* ── Sidebar toggle ─────────────────────── */
+        #sidebar { transition: transform .25s ease; }
+        #main-wrap { transition: padding-left .25s ease; }
+        body.sidebar-closed #sidebar { transform: translateX(-100%) !important; }
+        body.sidebar-closed #main-wrap { padding-left: 0 !important; }
+
+        /* ── Topbar ─────────────────────────────── */
+        #main-topbar {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* ── Nav Clock ──────────────────────────── */
+        .nav-clock {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: #0f1117;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            padding: 6px 12px;
+            box-shadow: 0 4px 12px rgba(15,17,23,.2);
+        }
+        @media(min-width:768px) { .nav-clock { display: flex; } }
+        .nav-clock-dot {
+            width: 7px; height: 7px; border-radius: 99px;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+            animation: navPulse 1.8s ease infinite;
+            flex-shrink: 0;
+        }
+        @keyframes navPulse {
+            0%,100% { transform: scale(1); opacity:.9; }
+            50%      { transform: scale(1.2); opacity:1; }
+        }
+        .nav-clock-body { line-height: 1.15; }
+        .nav-clock-time {
+            font-size: 13px; font-weight: 700;
+            letter-spacing: .05em; font-variant-numeric: tabular-nums;
+        }
+        .nav-clock-date {
+            font-size: 9px; letter-spacing: .08em;
+            text-transform: uppercase; color: rgba(255,255,255,.38);
+            font-weight: 500; margin-top: 1px;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col">
+            <a href="{% url 'home' %}" class="sidebar-logo" aria-label="Go to home">
+                <img src="{% static 'images/logo.jpeg' %}" alt="SENOVKA" style="height:40px;width:auto;object-fit:contain;border-radius:6px;flex-shrink:0;">
+                <div class="sidebar-logo-text">
+                    <div class="sidebar-logo-name">SENOVKA ERP</div>
+                    <div class="sidebar-logo-sub">Management System</div>
+                </div>
+            </a>
+            {% with is_superadmin=request.user.profile.is_superadmin %}
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">Overview</div>
+                <a href="{% url 'home' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h5v-6h4v6h5a1 1 0 001-1V10"/></svg>
+                    Home
+                </a>
+                <a href="{% url 'all_logs' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-3m3 7H6a2 2 0 01-2-2V5a2 2 0 012-2h7.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Activity Logs
+                </a>
+                <a href="{% url 'reminder_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    Reminders
+                    {% if reminders_due_count %}
+                    <span class="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{{ reminders_due_count }}</span>
+                    {% endif %}
+                </a>
+
+                {% if is_superadmin %}
+                <div class="sidebar-section">Administration</div>
+                <a href="{% url 'user_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    Manage Users
+                </a>
+                <a href="{% url 'company_settings' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Company Settings
+                </a>
+                {% endif %}
+
+                <div class="sidebar-section">Tasks</div>
+                <a href="{% url 'task_board' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    Task Board
+                </a>
+
+                <div class="sidebar-section">Customers</div>
+                <a href="{% url 'customer_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    All Customers
+                </a>
+                <a href="{% url 'customer_pricing_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    Customer Pricing
+                </a>
+                <a href="{% url 'customer_balances_report' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 4h.01M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2z"/></svg>
+                    Customer Balances
+                </a>
+
+                <div class="sidebar-section">Production</div>
+                <a href="{% url 'category_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                    Categories
+                </a>
+                <a href="{% url 'product_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    Products
+                </a>
+                <a href="{% url 'daily_machine_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2zM8 5V3m8 2V3"/></svg>
+                    Machine Running
+                </a>
+                <a href="{% url 'production_entry_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Production Entries
+                </a>
+                <a href="{% url 'stock_ledger' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-3m3 7H6a2 2 0 01-2-2V5a2 2 0 012-2h7.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Stock Ledger
+                </a>
+                <a href="{% url 'all_production_report' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                    All Production Report
+                </a>
+                <a href="{% url 'target_log_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Target Tracker
+                </a>
+                <a href="{% url 'target_log_points_report' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Target Points
+                </a>
+                <a href="{% url 'shift_log_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Shift Logs
+                </a>
+                <a href="{% url 'shift_log_points_report' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Shift Points
+                </a>
+
+                <div class="sidebar-section">Billing</div>
+                <a href="{% url 'billing:bill_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    All Bills
+                </a>
+                <a href="{% url 'billing:bill_create' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Create New Bill
+                </a>
+                <a href="{% url 'billing:pending_bills' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Pending Bills
+                </a>
+                <a href="{% url 'billing:held_bills' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-1.414 1.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 006.586 13H4"/></svg>
+                    Held Bills
+                </a>
+
+                <div class="sidebar-section">Sales</div>
+                <a href="{% url 'billing:cash_sales' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2M5 9h14l-1 10H6L5 9zm5 5h.01M14 14h.01"/></svg>
+                    Cash Sales
+                </a>
+                <a href="{% url 'billing:cheque_sales' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    Cheque Sales
+                </a>
+                <a href="{% url 'billing:split_sales' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Split Sales
+                </a>
+
+                <div class="sidebar-section">Order Booking</div>
+                <a href="{% url 'booking:booking_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    All Bookings
+                </a>
+                <a href="{% url 'booking:booking_create' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    New Booking
+                </a>
+
+                <div class="sidebar-section">Suppliers</div>
+                <a href="{% url 'suppliers:supplier_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    All Suppliers
+                </a>
+                <a href="{% url 'suppliers:supply_record' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    Record Supply
+                </a>
+                <a href="{% url 'suppliers:purchase_order_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Purchase Orders
+                </a>
+
+                <div class="sidebar-section">Purchasing</div>
+                <a href="{% url 'purchasing:purchase_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    Material Purchases
+                </a>
+                <a href="{% url 'purchasing:purchase_create' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Record Purchase
+                </a>
+
+                <div class="sidebar-section">Finance</div>
+                <a href="{% url 'pettycash:sale_list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2M5 9h14l-1 10H6L5 9zm4 4h.01M15 13h.01"/></svg>
+                    Petty Cash
+                </a>
+                <a href="{% url 'pettycash:sale_create' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Cash Entry
+                </a>
+
+                <div class="sidebar-section">Vehicles</div>
+                <a href="{% url 'vehicles:list' %}" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    Vehicle Maintenance
+                </a>
+            </nav>
+            {% endwith %}
+        </aside>
+
+        <!-- Main content -->
+        <div id="main-wrap" class="lg:pl-64">
+            <!-- Top bar -->
+            <header id="main-topbar" class="sticky top-0 z-20">
+                <div class="flex items-center h-16 px-4 sm:px-6 lg:px-8 gap-3">
+                    <!-- Sidebar toggle (all screens) -->
+                    <button id="sidebar-toggle-btn" onclick="toggleSidebar()" class="p-2 rounded-md text-gray-500 hover:bg-gray-100 flex-shrink-0" title="Toggle sidebar">
+                        <svg id="sidebar-toggle-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <!-- Centered page title -->
+                    <h1 class="flex-1 text-center text-base font-semibold text-gray-900 truncate">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <!-- Right: clock + shortcuts help + user menu -->
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                      <!-- Keyboard shortcuts help button -->
+                      <button id="shortcuts-btn" title="Quick Navigate (Alt+S)"
+                              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-gray-200 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                        </svg>
+                        Go to…
+                        <kbd class="ml-0.5 px-1 py-0.5 rounded text-[10px] font-mono bg-gray-100 border border-gray-300 text-gray-400 leading-none">Alt+S</kbd>
+                      </button>
+                      <!-- Reminders bell -->
+                      <a href="{% url 'reminder_list' %}" title="Reminders"
+                         class="relative flex items-center p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        {% if reminders_due_count %}
+                        <span class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{{ reminders_due_count }}</span>
+                        {% endif %}
+                      </a>
+                      <!-- Live clock -->
+                      <div class="nav-clock" aria-live="polite">
+                        <span class="nav-clock-dot" aria-hidden="true"></span>
+                        <div class="nav-clock-body">
+                          <div id="nav-live-time" class="nav-clock-time">--:--:--</div>
+                          <div id="nav-live-date" class="nav-clock-date"></div>
+                        </div>
+                      </div>
+                    <!-- User menu -->
+                    <div class="relative" id="user-menu-root">
+                      <button type="button" id="user-menu-btn"
+                              class="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-gray-50 transition group"
+                              aria-haspopup="true" aria-expanded="false">
+                        <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          {{ request.user.first_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}{% if request.user.last_name %}{{ request.user.last_name|slice:":1"|upper }}{% endif %}
+                        </div>
+                        <span class="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate">
+                          {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
+                        <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-aria-expanded:rotate-180 hidden sm:block"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </button>
+
+                      <!-- Dropdown -->
+                      <div id="user-dropdown"
+                           class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100
+                                  py-1.5 z-50 origin-top-right"
+                           style="animation: dropIn .15s ease-out;">
+                        <!-- User info -->
+                        <div class="px-4 py-3 border-b border-gray-100">
+                          <p class="text-sm font-semibold text-gray-900 truncate">
+                            {{ request.user.get_full_name|default:request.user.username }}
+                          </p>
+                          <p class="text-xs text-gray-400 mt-0.5">@{{ request.user.username }}</p>
+                          <span class="inline-block mt-1.5 text-xs font-medium px-2 py-0.5 rounded-full
+                            {% if request.user.profile.is_superadmin %}bg-amber-100 text-amber-700
+                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {% if request.user.profile.is_superadmin %}Super Admin
+                            {% else %}Admin{% endif %}
+                          </span>
+                        </div>
+
+                        <!-- Links -->
+                        <a href="{% url 'profile' %}"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600
+                                  hover:bg-gray-50 hover:text-gray-900 transition">
+                          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                          My Profile
+                        </a>
+
+                        <div class="border-t border-gray-100 mt-1 pt-1">
+                          <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600
+                                           hover:bg-red-50 transition text-left">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                              </svg>
+                              Sign Out
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    </div>{# /right flex group #}
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcuts-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
+      <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm mx-4 modal-enter overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="2" y="6" width="20" height="12" rx="2" ry="2" stroke-width="2" fill="none"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/>
+              </svg>
+            </div>
+            <span class="font-semibold text-gray-900 text-sm">Keyboard Shortcuts</span>
+          </div>
+          <button id="shortcuts-close" class="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <p class="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2">Navigation</p>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-700">Quick Navigate (Search Pages)</span>
+            <div class="flex items-center gap-1">
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">Alt</kbd>
+              <span class="text-gray-400 text-xs">+</span>
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">S</kbd>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2 pt-2 border-t border-gray-100">Quick Create</p>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-700">Create New Bill</span>
+            <div class="flex items-center gap-1">
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">Alt</kbd>
+              <span class="text-gray-400 text-xs">+</span>
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">B</kbd>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-700">New Booking Order</span>
+            <div class="flex items-center gap-1">
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">Alt</kbd>
+              <span class="text-gray-400 text-xs">+</span>
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">O</kbd>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-700">Add Petty Cash Entry</span>
+            <div class="flex items-center gap-1">
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">Alt</kbd>
+              <span class="text-gray-400 text-xs">+</span>
+              <kbd class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono font-semibold border border-gray-200 shadow-sm">P</kbd>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 pb-4">
+          <p class="text-xs text-gray-400 text-center">Shortcuts are disabled when typing in a field</p>
+        </div>
+      </div>
+    </div>
+                </div>
+            </header>
+
+            <!-- Page content -->
+            <main class="p-4 sm:p-6 lg:p-8">
+                {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for message in messages %}
+                    <div class="flex items-center gap-2 p-3 rounded-lg text-sm {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal container -->
+    <div id="modal-container"></div>
+
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        /* ── Nav Clock ── */
+        (function() {
+          const tEl = document.getElementById('nav-live-time');
+          const dEl = document.getElementById('nav-live-date');
+          if (!tEl) return;
+          const tf = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+          const df = new Intl.DateTimeFormat([], { weekday: 'short', day: '2-digit', month: 'short' });
+          const tick = () => { const n = new Date(); tEl.textContent = tf.format(n); if (dEl) dEl.textContent = df.format(n); };
+          tick();
+          setInterval(tick, 1000);
+        })();
+
+        /* ── User menu dropdown ── */
+        (function() {
+          const btn      = document.getElementById('user-menu-btn');
+          const dropdown = document.getElementById('user-dropdown');
+          if (!btn || !dropdown) return;
+
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = !dropdown.classList.contains('hidden');
+            dropdown.classList.toggle('hidden', isOpen);
+            btn.setAttribute('aria-expanded', String(!isOpen));
+            if (!isOpen) dropdown.style.animation = 'dropIn .15s ease-out';
+          });
+
+          document.addEventListener('click', () => {
+            dropdown.classList.add('hidden');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+
+          dropdown.addEventListener('click', (e) => e.stopPropagation());
+        })();
+
+        /* ── Sidebar toggle ── */
+        function toggleSidebar() {
+            const isClosed = document.body.classList.toggle('sidebar-closed');
+            localStorage.setItem('sidebarState', isClosed ? 'closed' : 'open');
+        }
+
+        // Restore sidebar state on load (desktop only)
+        (function() {
+            if (window.innerWidth >= 1024 && localStorage.getItem('sidebarState') === 'closed') {
+                document.body.classList.add('sidebar-closed');
+            }
+        })();
+
+        /* ── Auto-select on focus for all number inputs ── */
+        document.addEventListener('focusin', function(e) {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+                e.target.select();
+            }
+        });
+
+        // Highlight active sidebar link
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            const linkPath = new URL(link.href).pathname;
+            const currentPath = window.location.pathname;
+            const isRootPath = linkPath === '/';
+            const isExactMatch = link.href === window.location.href || linkPath === currentPath;
+            const isPrefixMatch = !isRootPath && currentPath.startsWith(linkPath);
+
+            if (link.getAttribute('href') !== '#' && (isExactMatch || isPrefixMatch)) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+    /* ── Keyboard Shortcuts ── */
+    (function () {
+      var SHORTCUTS = {
+        'b': { url: '{% url "billing:bill_create" %}',   label: 'Create New Bill' },
+        'o': { url: '{% url "booking:booking_create" %}', label: 'New Booking Order' },
+        'p': { url: '{% url "pettycash:sale_create" %}',  label: 'Add Petty Cash Entry' },
+      };
+
+      /* Navigate on Alt+key */
+      document.addEventListener('keydown', function (e) {
+        if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        var tag = document.activeElement ? document.activeElement.tagName : '';
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+
+        var sc = SHORTCUTS[e.key.toLowerCase()];
+        if (!sc) return;
+
+        e.preventDefault();
+        showShortcutToast(sc.label);
+        setTimeout(function () { window.location.href = sc.url; }, 280);
+      });
+
+      /* Toast notification */
+      function showShortcutToast(label) {
+        var existing = document.getElementById('shortcut-toast');
+        if (existing) existing.remove();
+
+        var t = document.createElement('div');
+        t.id = 'shortcut-toast';
+        t.innerHTML = '<svg style="width:14px;height:14px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2" ry="2" stroke-width="2" fill="none"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg><span>' + label + '</span>';
+        t.style.cssText = 'position:fixed;bottom:24px;right:24px;display:flex;align-items:center;gap:8px;background:#0f1117;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:1;transition:opacity .3s;border:1px solid rgba(255,255,255,.1);';
+        document.body.appendChild(t);
+        setTimeout(function () {
+          t.style.opacity = '0';
+          setTimeout(function () { t.remove(); }, 320);
+        }, 1400);
+      }
+
+      /* Shortcuts modal (kept for Alt+?) */
+      var shortcutsModal   = document.getElementById('shortcuts-modal');
+      var shortcutsClose   = document.getElementById('shortcuts-close');
+      if (shortcutsClose) shortcutsClose.addEventListener('click', function() { if (shortcutsModal) shortcutsModal.classList.add('hidden'); });
+      if (shortcutsModal) shortcutsModal.addEventListener('click', function(e) { if (e.target === shortcutsModal) shortcutsModal.classList.add('hidden'); });
+    })();
+    </script>
+
+    <!-- ── Command Palette ── -->
+    <div id="nav-palette" class="hidden fixed inset-0 z-[70] flex items-start justify-center" style="background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding-top:12vh;" role="dialog" aria-modal="true" aria-label="Quick Navigation">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" style="animation:modalIn .18s ease-out;">
+
+        <!-- Search input row -->
+        <div class="flex items-center gap-3 px-4 border-b border-gray-100" style="height:54px;">
+          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+          </svg>
+          <input id="nav-palette-input" type="text" placeholder="Search pages…"
+                 autocomplete="off" spellcheck="false"
+                 class="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent" style="font-size:15px;">
+          <kbd class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 border border-gray-200 text-gray-400">Esc</kbd>
+        </div>
+
+        <!-- Results list -->
+        <div id="nav-palette-results" class="overflow-y-auto" style="max-height:58vh;"></div>
+
+        <!-- Footer hints -->
+        <div class="flex items-center gap-5 px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+          <span class="flex items-center gap-1 text-xs text-gray-400">
+            <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-white border border-gray-300">↑↓</kbd> navigate
+          </span>
+          <span class="flex items-center gap-1 text-xs text-gray-400">
+            <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-white border border-gray-300">↵</kbd> open
+          </span>
+          <span class="flex items-center gap-1 text-xs text-gray-400">
+            <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-white border border-gray-300">Esc</kbd> close
+          </span>
+          <span class="ml-auto text-xs text-gray-300">Alt+S to open</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    /* ── Command Palette ── */
+    (function () {
+      var palette     = document.getElementById('nav-palette');
+      var input       = document.getElementById('nav-palette-input');
+      var resultsEl   = document.getElementById('nav-palette-results');
+      var navBtn      = document.getElementById('shortcuts-btn');
+      var activeIdx   = -1;
+      var filtered    = [];
+
+      /* Build index from the live sidebar DOM — picks up every .sidebar-link automatically */
+      var navItems = [];
+      var currentSection = '';
+      document.querySelectorAll('#sidebar .sidebar-nav > *').forEach(function (el) {
+        if (el.classList.contains('sidebar-section')) {
+          currentSection = el.textContent.trim();
+        } else if (el.classList.contains('sidebar-link')) {
+          var svgEl = el.querySelector('svg');
+          navItems.push({
+            label:   el.textContent.trim(),
+            href:    el.getAttribute('href'),
+            section: currentSection,
+            svg:     svgEl ? svgEl.outerHTML : '',
+          });
+        }
+      });
+
+      /* ── Open / Close ── */
+      function openPalette() {
+        palette.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        input.value = '';
+        renderResults('');
+        setTimeout(function () { input.focus(); }, 30);
+      }
+
+      function closePalette() {
+        palette.classList.add('hidden');
+        document.body.style.overflow = '';
+        activeIdx = -1;
+      }
+
+      /* ── Render filtered list ── */
+      function renderResults(query) {
+        var q = query.toLowerCase().trim();
+        filtered = q
+          ? navItems.filter(function (it) {
+              return it.label.toLowerCase().includes(q) || it.section.toLowerCase().includes(q);
+            })
+          : navItems.slice();
+
+        if (filtered.length === 0) {
+          resultsEl.innerHTML = '<p style="padding:28px 16px;text-align:center;font-size:13px;color:#9ca3af;">No pages found for "<strong>' + escHtml(query) + '</strong>"</p>';
+          activeIdx = -1;
+          return;
+        }
+
+        var html = '';
+        var lastSection = '';
+        filtered.forEach(function (item, i) {
+          if (item.section !== lastSection) {
+            html += '<div style="padding:10px 16px 4px;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;">' + escHtml(item.section) + '</div>';
+            lastSection = item.section;
+          }
+          var iconHtml = item.svg
+            ? '<span style="width:18px;height:18px;flex-shrink:0;color:#6b7280;">' + item.svg + '</span>'
+            : '<span style="width:18px;height:18px;flex-shrink:0;"></span>';
+          html += '<a href="' + escAttr(item.href) + '" class="palette-result-item" data-idx="' + i + '" '
+                + 'style="display:flex;align-items:center;gap:12px;padding:9px 16px;font-size:13.5px;color:#111827;text-decoration:none;transition:background .1s;"'
+                + ' onmouseenter="palSetActive(' + i + ')">'
+                + iconHtml
+                + '<span style="flex:1;">' + escHtml(item.label) + '</span>'
+                + '<span style="font-size:11px;color:#d1d5db;">' + escHtml(item.section) + '</span>'
+                + '</a>';
+        });
+        resultsEl.innerHTML = html;
+        activeIdx = -1;
+      }
+
+      /* ── Keyboard navigation ── */
+      function palSetActive(idx) {
+        activeIdx = idx;
+        resultsEl.querySelectorAll('.palette-result-item').forEach(function (el, i) {
+          if (i === idx) {
+            el.style.background = '#eff6ff';
+            el.style.color = '#1d4ed8';
+            el.scrollIntoView({ block: 'nearest' });
+          } else {
+            el.style.background = '';
+            el.style.color = '';
+          }
+        });
+      }
+      window.palSetActive = palSetActive;
+
+      input.addEventListener('input', function () {
+        renderResults(input.value);
+      });
+
+      input.addEventListener('keydown', function (e) {
+        var items = resultsEl.querySelectorAll('.palette-result-item');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          palSetActive(Math.min(activeIdx + 1, items.length - 1));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          palSetActive(Math.max(activeIdx - 1, 0));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeIdx >= 0 && activeIdx < filtered.length) {
+            window.location.href = filtered[activeIdx].href;
+          } else if (filtered.length > 0) {
+            window.location.href = filtered[0].href;
+          }
+        } else if (e.key === 'Escape') {
+          closePalette();
+        }
+      });
+
+      /* Click outside to close */
+      palette.addEventListener('click', function (e) {
+        if (e.target === palette) closePalette();
+      });
+
+      /* Alt+S — open palette (unless typing in a field) */
+      document.addEventListener('keydown', function (e) {
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+          var tag = document.activeElement ? document.activeElement.tagName : '';
+          if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+          e.preventDefault();
+          openPalette();
+        }
+        if (e.key === 'Escape' && !palette.classList.contains('hidden')) {
+          closePalette();
+        }
+      });
+
+      /* "Go to…" topbar button */
+      if (navBtn) navBtn.addEventListener('click', openPalette);
+
+      /* Highlight matched text helper */
+      function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+      function escAttr(s) {
+        return String(s).replace(/"/g, '&quot;');
+      }
+    })();
+    </script>
+</body>
+</html>

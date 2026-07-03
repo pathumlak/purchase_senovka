@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}{{ booking.booking_number }} - ERP System{% endblock %}
+{% block page_title %}Booking {{ booking.booking_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <!-- Back + actions -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <a href="{% url 'booking:booking_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>All Bookings
+    </a>
+    <div class="flex gap-2 flex-wrap">
+      <!-- Quotation actions always available -->
+      <a href="{% url 'booking:quotation_pdf' booking.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Quotation PDF
+      </a>
+      <a href="{% url 'booking:quotation_excel' booking.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Quotation Excel
+      </a>
+
+      {% if booking.status == 'PENDING' %}
+      <a href="{% url 'booking:booking_confirm' booking.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-blue-200 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Confirm Order
+      </a>
+      <a href="{% url 'booking:booking_cancel' booking.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        Cancel
+      </a>
+      {% elif booking.status == 'CONFIRMED' and booking.bill %}
+      <a href="{% url 'billing:bill_detail' booking.bill.pk %}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-primary-200 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        View Bill
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Header card -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <h2 class="text-2xl font-bold text-gray-900">{{ booking.booking_number }}</h2>
+          {% if booking.status == 'PENDING' %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+          {% elif booking.status == 'CONFIRMED' %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Confirmed</span>
+          {% else %}
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Cancelled</span>
+          {% endif %}
+        </div>
+        <p class="mt-1 text-sm text-gray-500">{{ booking.booking_date|date:"d F Y" }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-3xl font-bold text-gray-900">Rs. {{ booking.total_amount|floatformat:2 }}</p>
+        {% if booking.discount_amount > 0 %}
+        <p class="text-sm text-red-500 mt-0.5">Incl. discount: Rs. {{ booking.discount_amount|floatformat:2 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 border-t border-gray-100">
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Customer</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ booking.customer.name }}</p>
+      </div>
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Order Sending Date</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ booking.order_sending_date|date:"d F Y"|default:"Not set" }}</p>
+      </div>
+      <div class="px-5 py-4 border-r border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Linked Bill</p>
+        {% if booking.bill %}
+        <a href="{% url 'billing:bill_detail' booking.bill.pk %}" class="mt-1 text-sm font-semibold text-primary-700 hover:underline block">{{ booking.bill.bill_number }}</a>
+        {% else %}
+        <p class="mt-1 text-sm font-semibold text-gray-400">—</p>
+        {% endif %}
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Created By</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ booking.created_by.get_full_name|default:booking.created_by.username|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <h3 class="text-sm font-semibold text-gray-700">Products</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Unit Price</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc %</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc Amt</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Line Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for item in booking.items.all %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3">
+              <p class="text-sm font-medium text-gray-900">{{ item.product.name }}</p>
+              <p class="text-xs text-gray-400">{{ item.product.category.name }}</p>
+            </td>
+            <td class="px-4 py-3 text-right text-sm text-gray-700">{{ item.quantity|floatformat:3 }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-700">Rs. {{ item.unit_price|floatformat:2 }}</td>
+            <td class="px-4 py-3 text-right text-sm text-gray-500">{{ item.discount_percent|floatformat:2 }}%</td>
+            <td class="px-4 py-3 text-right text-sm text-red-500">Rs. {{ item.discount_amount|floatformat:2 }}</td>
+            <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">Rs. {{ item.line_total|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="bg-gray-50">
+          <tr>
+            <td colspan="4" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Subtotal</td>
+            <td colspan="2" class="px-4 py-3 text-right text-sm font-semibold text-gray-900">Rs. {{ booking.subtotal|floatformat:2 }}</td>
+          </tr>
+          {% if booking.discount_amount > 0 %}
+          <tr>
+            <td colspan="4" class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total Discount</td>
+            <td colspan="2" class="px-4 py-2 text-right text-sm font-semibold text-red-600">− Rs. {{ booking.discount_amount|floatformat:2 }}</td>
+          </tr>
+          {% endif %}
+          <tr class="border-t-2 border-gray-200">
+            <td colspan="4" class="px-4 py-3 text-right text-sm font-bold text-gray-700">Total</td>
+            <td colspan="2" class="px-4 py-3 text-right text-base font-bold text-gray-900">Rs. {{ booking.total_amount|floatformat:2 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  {% if booking.notes %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+    <p class="text-sm text-gray-700">{{ booking.notes }}</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

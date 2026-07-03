@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Petty Cash Detail - SENOVKA ERP{% endblock %}
+{% block page_title %}Petty Cash Detail{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">Transfer #{{ record.id }}</h2>
+      <p class="text-sm text-gray-500">Created {{ record.created_at|date:'M j, Y H:i' }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'pettycash:sale_edit' record.pk %}" class="px-4 py-2 rounded-lg border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition">Edit</a>
+      <a href="{% url 'pettycash:sale_delete' record.pk %}" class="px-4 py-2 rounded-lg border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition">Delete</a>
+      <a href="{% url 'pettycash:sale_list' %}" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">Back</a>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2">
+      <div class="px-6 py-4 border-b border-gray-100 md:border-r">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Date</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ record.date|date:'M j, Y' }}</p>
+      </div>
+      <div class="px-6 py-4 border-b border-gray-100">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Type</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ record.get_sale_type_display }}</p>
+      </div>
+      <div class="px-6 py-4 border-b border-gray-100 md:border-r">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Amount</p>
+        <p class="mt-1 text-lg font-bold text-gray-900">{{ record.amount|floatformat:2 }}</p>
+      </div>
+      <div class="px-6 py-4 border-b border-gray-100">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Reference Number</p>
+        <p class="mt-1 text-sm text-gray-800">{{ record.reference_number|default:'-' }}</p>
+      </div>
+      <div class="px-6 py-4 md:col-span-2 border-b border-gray-100">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Purpose</p>
+        <p class="mt-1 text-sm text-gray-900">{{ record.purpose }}</p>
+      </div>
+      <div class="px-6 py-4 md:col-span-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes</p>
+        <p class="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{{ record.notes|default:'-' }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

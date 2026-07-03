@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body  { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 20px; }
+  h1    { font-size: 15px; margin: 0 0 2px; }
+  .meta { font-size: 8.5px; color: #666; margin-bottom: 12px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 14px; }
+  .sum-box { border: 1px solid #ddd; border-radius: 4px; padding: 6px 12px; }
+  .sum-box .lbl { font-size: 7.5px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sum-box .val { font-size: 13px; font-weight: bold; color: #1d4ed8; margin-top: 1px; }
+  .val-green { color: #16a34a; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th  { padding: 5px 6px; text-align: left; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  th.r, td.r { text-align: right; }
+  td  { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; font-size: 8.5px; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .qty { font-weight: 700; color: #16a34a; }
+  .qty-low { color: #b45309; }
+  .qty-out { color: #dc2626; }
+  tfoot td { font-weight: bold; background: #eff6ff; border-top: 2px solid #1d4ed8; font-size: 9px; }
+  .footer { margin-top: 16px; font-size: 7.5px; color: #aaa; text-align: right; }
+</style>
+</head>
+<body>
+
+<h1>SENOVKA ERP — All Production Report</h1>
+<p class="meta">As of {{ today|date:"d M Y" }} &middot; Generated: {{ generated_at|date:"d M Y H:i" }}</p>
+
+<div class="summary">
+  <div class="sum-box">
+    <div class="lbl">Total Products</div>
+    <div class="val">{{ total_products }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Available Qty</div>
+    <div class="val val-green">{{ total_qty|floatformat }}</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Category</th>
+      <th>Product</th>
+      <th>Size</th>
+      <th class="r">Available Qty</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ p.category.name }}</td>
+      <td><strong>{{ p.name }}</strong></td>
+      <td style="color:#6b7280;">{{ p.size|default:"—" }}</td>
+      <td class="r"><span class="qty{% if p.qty <= 0 %} qty-out{% elif p.qty <= 10 %} qty-low{% endif %}">{{ p.qty|floatformat }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;">No products found.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4">TOTAL</td>
+      <td class="r qty">{{ total_qty|floatformat }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+<p class="footer">SENOVKA ERP &mdash; All Production Report &mdash; {{ generated_at|date:"d M Y" }}</p>
+</body>
+</html>

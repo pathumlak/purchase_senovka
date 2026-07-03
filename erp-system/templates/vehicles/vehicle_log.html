@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+{% block title %}Vehicle Maintenance{% endblock %}
+{% block page_title %}Vehicle Maintenance{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-5">
+
+  <!-- ── Month Navigation ── -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <!-- Month prev/next -->
+      <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-xl shadow-sm px-2 py-1.5">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}"
+           class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <span class="text-sm font-semibold text-gray-800 min-w-[110px] text-center">{{ month_name }} {{ year }}</span>
+        <a href="?year={{ next_year }}&month={{ next_month }}"
+           class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Export buttons -->
+      <a href="{% url 'vehicles:export_excel' %}?year={{ year }}&month={{ month }}"
+         class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition shadow-sm">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        Excel
+      </a>
+      <a href="{% url 'vehicles:export_pdf' %}?year={{ year }}&month={{ month }}"
+         class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition shadow-sm">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        PDF
+      </a>
+    </div>
+
+    <!-- Summary pills -->
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 flex items-center gap-2.5">
+        <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+        <div>
+          <p class="text-xs text-blue-500 leading-none">Total Trips</p>
+          <p class="text-base font-bold text-blue-700 leading-snug">{{ total_trips }}</p>
+        </div>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-2 flex items-center gap-2.5">
+        <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+        <div>
+          <p class="text-xs text-green-500 leading-none">Total KM</p>
+          <p class="text-base font-bold text-green-700 leading-snug">{{ total_km|floatformat:1 }} km</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Add Trip Form ── -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+        <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Log New Trip
+      </h3>
+    </div>
+    <form method="POST" action="?year={{ year }}&month={{ month }}" class="p-5">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+
+        <!-- Date -->
+        <div class="col-span-2 sm:col-span-2 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Date <span class="text-red-500">*</span></label>
+          <input type="date" name="date" value="{{ today }}" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- Driver -->
+        <div class="col-span-2 sm:col-span-2 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Driver <span class="text-red-500">*</span></label>
+          <input type="text" name="driver_name" list="driver-list" placeholder="Driver name" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+          <datalist id="driver-list">
+            {% for d in drivers %}<option value="{{ d }}">{% endfor %}
+          </datalist>
+        </div>
+
+        <!-- From -->
+        <div class="col-span-2 sm:col-span-2 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">From <span class="text-red-500">*</span></label>
+          <input type="text" name="from_location" placeholder="Start location" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- To -->
+        <div class="col-span-2 sm:col-span-2 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">To <span class="text-red-500">*</span></label>
+          <input type="text" name="to_location" placeholder="End location" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- Start KM -->
+        <div class="col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Start KM <span class="text-red-500">*</span></label>
+          <input type="number" name="start_km" id="add-start-km" placeholder="0" min="0" step="0.1" required
+                 oninput="calcKm('add-start-km','add-end-km','add-total-km')"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- End KM -->
+        <div class="col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">End KM <span class="text-red-500">*</span></label>
+          <input type="number" name="end_km" id="add-end-km" placeholder="0" min="0" step="0.1" required
+                 oninput="calcKm('add-start-km','add-end-km','add-total-km')"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- Total KM (read-only) -->
+        <div class="col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Total KM</label>
+          <div id="add-total-km"
+               class="w-full px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm font-bold text-green-700 text-center">
+            0.0 km
+          </div>
+        </div>
+
+        <!-- Purpose -->
+        <div class="col-span-2 sm:col-span-3 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-500 mb-1">Purpose <span class="text-red-500">*</span></label>
+          <input type="text" name="purpose" placeholder="Trip purpose" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+
+        <!-- Submit -->
+        <div class="col-span-2 sm:col-span-1 flex items-end">
+          <button type="submit"
+                  class="w-full px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm whitespace-nowrap">
+            + Add Trip
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Trip Log Table ── -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-gray-100">
+      <h3 class="text-sm font-semibold text-gray-800">
+        Trip Log — {{ month_name }} {{ year }}
+        <span class="ml-2 text-xs font-normal text-gray-400">({{ total_trips }} trip{{ total_trips|pluralize }})</span>
+      </h3>
+    </div>
+
+    {% if logs %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Driver</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">From → To</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Start KM</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">End KM</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Total KM</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Purpose</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          {% for log in logs %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3 text-xs text-gray-400">{{ forloop.counter }}</td>
+            <td class="px-4 py-3 text-gray-700 whitespace-nowrap font-medium">{{ log.date|date:"d M Y" }}</td>
+            <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ log.driver_name }}</td>
+            <td class="px-4 py-3 text-gray-600">
+              <span class="font-medium text-gray-800">{{ log.from_location }}</span>
+              <span class="mx-1.5 text-gray-400">→</span>
+              <span class="font-medium text-gray-800">{{ log.to_location }}</span>
+            </td>
+            <td class="px-4 py-3 text-right text-gray-600 tabular-nums">{{ log.start_km|floatformat:1 }}</td>
+            <td class="px-4 py-3 text-right text-gray-600 tabular-nums">{{ log.end_km|floatformat:1 }}</td>
+            <td class="px-4 py-3 text-right">
+              <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-full border border-green-200">
+                {{ log.total_km|floatformat:1 }} km
+              </span>
+            </td>
+            <td class="px-4 py-3 text-gray-600 max-w-[180px] truncate" title="{{ log.purpose }}">{{ log.purpose }}</td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <button type="button"
+                      onclick="openEdit({{ log.pk }},'{{ log.date|date:"Y-m-d" }}','{{ log.driver_name|escapejs }}','{{ log.from_location|escapejs }}','{{ log.to_location|escapejs }}',{{ log.start_km }},{{ log.end_km }},'{{ log.purpose|escapejs }}')"
+                      class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition mr-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Edit
+              </button>
+              <form method="POST" action="{% url 'vehicles:delete' log.pk %}?year={{ year }}&month={{ month }}"
+                    class="inline" onsubmit="return confirm('Delete this trip log?')">
+                {% csrf_token %}
+                <input type="hidden" name="year"  value="{{ year }}">
+                <input type="hidden" name="month" value="{{ month }}">
+                <button type="submit"
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="bg-gray-50 border-t-2 border-gray-200">
+            <td colspan="6" class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+              Total for {{ month_name }} {{ year }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <span class="inline-flex items-center gap-1 bg-green-600 text-white font-bold text-sm px-3 py-1 rounded-full">
+                {{ total_km|floatformat:1 }} km
+              </span>
+            </td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="flex flex-col items-center justify-center py-16 text-center px-4">
+      <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-gray-500">No trips logged for {{ month_name }} {{ year }}</p>
+      <p class="text-xs text-gray-400 mt-1">Use the form above to log the first trip.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Edit Modal ── -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+     style="background:rgba(17,24,39,0.5)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl" onclick="event.stopPropagation()">
+
+    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+      <h3 class="text-base font-bold text-gray-900">Edit Trip</h3>
+      <button onclick="closeEdit()" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <form id="edit-form" method="POST" action="" class="p-6 space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="year"  value="{{ year }}">
+      <input type="hidden" name="month" value="{{ month }}">
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Date <span class="text-red-500">*</span></label>
+          <input type="date" name="date" id="edit-date" required
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Driver <span class="text-red-500">*</span></label>
+          <input type="text" name="driver_name" id="edit-driver" list="driver-list" required
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">From <span class="text-red-500">*</span></label>
+          <input type="text" name="from_location" id="edit-from" required
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">To <span class="text-red-500">*</span></label>
+          <input type="text" name="to_location" id="edit-to" required
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Start KM <span class="text-red-500">*</span></label>
+          <input type="number" name="start_km" id="edit-start-km" min="0" step="0.1" required
+                 oninput="calcKm('edit-start-km','edit-end-km','edit-total-km')"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">End KM <span class="text-red-500">*</span></label>
+          <input type="number" name="end_km" id="edit-end-km" min="0" step="0.1" required
+                 oninput="calcKm('edit-start-km','edit-end-km','edit-total-km')"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Total KM</label>
+          <div id="edit-total-km"
+               class="px-3.5 py-2.5 bg-green-50 border border-green-200 rounded-lg text-sm font-bold text-green-700 text-center">
+            0.0 km
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Purpose <span class="text-red-500">*</span></label>
+          <input type="text" name="purpose" id="edit-purpose" required
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeEdit()"
+                class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-6 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+          Save Changes
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcKm(startId, endId, totalId) {
+  const s = parseFloat(document.getElementById(startId).value) || 0;
+  const e = parseFloat(document.getElementById(endId).value)   || 0;
+  const t = Math.max(0, e - s);
+  const el = document.getElementById(totalId);
+  el.textContent = t.toFixed(1) + ' km';
+  el.className = t > 0
+    ? 'w-full px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm font-bold text-green-700 text-center'
+    : 'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-400 text-center';
+}
+
+function openEdit(pk, date, driver, from_loc, to_loc, start_km, end_km, purpose) {
+  document.getElementById('edit-form').action = '/vehicles/' + pk + '/edit/';
+  document.getElementById('edit-date').value    = date;
+  document.getElementById('edit-driver').value  = driver;
+  document.getElementById('edit-from').value    = from_loc;
+  document.getElementById('edit-to').value      = to_loc;
+  document.getElementById('edit-start-km').value= start_km;
+  document.getElementById('edit-end-km').value  = end_km;
+  document.getElementById('edit-purpose').value = purpose;
+  calcKm('edit-start-km', 'edit-end-km', 'edit-total-km');
+  document.getElementById('edit-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('edit-driver').focus(), 50);
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.add('hidden');
+}
+
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeEdit();
+});
+</script>
+{% endblock %}

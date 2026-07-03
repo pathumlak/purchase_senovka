@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Delete Sale - SENOVKA ERP{% endblock %}
+{% block page_title %}Delete Sale{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-6 text-center">
+      <div class="mx-auto w-14 h-14 bg-rose-100 rounded-full flex items-center justify-center mb-4">
+        <svg class="w-7 h-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Cash Sale</h3>
+      <p class="text-sm text-gray-500">
+        Are you sure you want to delete the <strong class="text-gray-700">{{ record.get_sale_type_display }}</strong>
+        of <strong class="text-gray-700">{{ record.amount|floatformat:2 }}</strong> on {{ record.date|date:'M j, Y' }}?
+        This cannot be undone.
+      </p>
+    </div>
+    <form method="post" class="px-6 pb-6">
+      {% csrf_token %}
+      <div class="flex items-center gap-3">
+        <a href="{% url 'pettycash:sale_detail' record.pk %}"
+           class="flex-1 text-center px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">Cancel</a>
+        <button type="submit"
+                class="flex-1 px-4 py-2.5 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,515 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice {{ bill.bill_number }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 13pt;
+    color: #000;
+    background: #d8d8d8;
+  }
+
+  /* A4 page centered on screen */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    padding: 16mm 18mm 18mm 18mm;
+    background: #fff;
+    border: 1px solid #bbb;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    border-bottom: 2.5px solid #000;
+    padding-bottom: 12pt;
+    margin-bottom: 14pt;
+  }
+  .header img {
+    height: 120pt;
+    width: auto;
+    display: block;
+    margin: 0 auto 8pt;
+  }
+  .header .company-name {
+    font-size: 20pt;
+    font-weight: bold;
+    letter-spacing: 2.5pt;
+    text-transform: uppercase;
+  }
+  .header .company-tagline {
+    font-size: 10pt;
+    color: #444;
+    margin-top: 2pt;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+  }
+  .header .company-contacts {
+    margin-top: 6pt;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #222;
+  }
+  .header .company-contacts span {
+    margin: 0 8pt;
+  }
+
+  /* ── Invoice title row ── */
+  .invoice-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14pt;
+    border-bottom: 1px solid #000;
+    padding-bottom: 10pt;
+  }
+  .invoice-title-row h2 {
+    font-size: 18pt;
+    font-weight: bold;
+    letter-spacing: 3pt;
+    text-transform: uppercase;
+  }
+  .invoice-meta { text-align: right; font-size: 11pt; line-height: 1.9; }
+  .invoice-meta strong { font-weight: bold; }
+
+  /* ── Status stamp ── */
+  .stamp {
+    display: inline-block;
+    border: 2px solid #000;
+    padding: 2pt 9pt;
+    font-size: 9.5pt;
+    font-weight: bold;
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    margin-top: 6pt;
+  }
+
+  /* ── Bill To ── */
+  .bill-to {
+    margin-bottom: 16pt;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 12pt;
+  }
+  .bill-to .label {
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    font-weight: bold;
+    margin-bottom: 4pt;
+    color: #555;
+  }
+  .bill-to .customer-name {
+    font-size: 16pt;
+    font-weight: bold;
+  }
+  .bill-to .customer-address {
+    font-size: 11pt;
+    color: #444;
+    margin-top: 2pt;
+  }
+
+  /* ── Items table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12pt;
+    font-size: 11.5pt;
+  }
+  thead tr { border-top: 2px solid #000; border-bottom: 1.5px solid #000; }
+  th {
+    padding: 7pt 8pt;
+    text-align: left;
+    font-weight: bold;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+  th.r, td.r { text-align: right; }
+  td { padding: 7pt 8pt; border-bottom: 1px solid #ccc; }
+  tbody tr:last-child td { border-bottom: 1.5px solid #000; }
+  .product-name { font-weight: bold; font-size: 12pt; }
+
+  /* ── Totals ── */
+  .totals-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 18pt;
+  }
+  .totals { width: 60mm; }
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4pt 0;
+    font-size: 11pt;
+    border-bottom: 1px dotted #aaa;
+  }
+  .totals-row:last-child { border-bottom: none; }
+  .totals-row.grand {
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
+    font-weight: bold;
+    font-size: 14pt;
+    padding: 6pt 0;
+    margin-top: 3pt;
+  }
+  .totals-row.due {
+    font-weight: bold;
+    font-size: 12pt;
+    border-top: 1.5px solid #000;
+    padding-top: 6pt;
+    margin-top: 3pt;
+  }
+  .totals-row.net {
+    font-weight: bold;
+    font-size: 13pt;
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
+    padding: 6pt 0;
+    margin-top: 3pt;
+  }
+  .lbl { color: #444; }
+
+
+  /* ── Payments ── */
+  .payments { margin-bottom: 16pt; }
+  .payments .section-label {
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    font-weight: bold;
+    border-bottom: 1px solid #000;
+    padding-bottom: 3pt;
+    margin-bottom: 8pt;
+  }
+  .pay-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11pt;
+    padding: 4pt 0;
+    border-bottom: 1px dotted #ccc;
+  }
+  .pay-row:last-child { border-bottom: none; }
+  .pay-method { font-weight: bold; }
+  .pay-meta { font-size: 10pt; color: #555; margin-top: 1pt; }
+  .pay-amount { font-weight: bold; font-size: 12pt; }
+
+  /* ── Notes ── */
+  .notes {
+    font-size: 11pt;
+    border: 1px solid #aaa;
+    padding: 7pt 10pt;
+    margin-bottom: 18pt;
+    line-height: 1.5;
+  }
+
+  /* ── Signature line ── */
+  .signature-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30pt;
+    margin-bottom: 16pt;
+  }
+  .sig-box { width: 40%; }
+  .sig-line {
+    border-top: 1px solid #000;
+    padding-top: 5pt;
+    font-size: 10pt;
+    text-align: center;
+    color: #555;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid #000;
+    padding-top: 6pt;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #555;
+  }
+
+  /* ── Screen-only controls ── */
+  .no-print {
+    width: 210mm;
+    margin: 12px auto 0;
+    padding-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    font-family: Arial, sans-serif;
+  }
+  .no-print button, .no-print a {
+    padding: 7px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid #555;
+    background: #fff;
+    color: #000;
+  }
+  .no-print button { background: #000; color: #fff; border-color: #000; }
+
+  /* ── Semi-compact mode (6–9 items): shrink header/gaps, keep readable fonts ── */
+  .page.semi { padding: 10mm 16mm 10mm 16mm; }
+
+  .semi .header { padding-bottom: 7pt; margin-bottom: 9pt; }
+  .semi .header img { height: 80pt; margin-bottom: 5pt; }
+  .semi .header .company-name { font-size: 16pt; letter-spacing: 1.5pt; }
+  .semi .header .company-tagline { font-size: 8.5pt; margin-top: 1pt; }
+  .semi .header .company-contacts { font-size: 9pt; margin-top: 4pt; line-height: 1.6; }
+  .semi .header .company-contacts span { margin: 0 6pt; }
+
+  .semi .invoice-title-row { margin-bottom: 9pt; padding-bottom: 7pt; }
+  .semi .invoice-title-row h2 { font-size: 15pt; }
+  .semi .invoice-meta { font-size: 10pt; line-height: 1.7; }
+
+  .semi .bill-to { margin-bottom: 10pt; padding-bottom: 8pt; }
+  .semi .bill-to .customer-name { font-size: 13pt; }
+  .semi .bill-to .customer-address { font-size: 10pt; }
+
+  .semi table { font-size: 10.5pt; margin-bottom: 8pt; }
+  .semi th { padding: 5pt 7pt; font-size: 9pt; }
+  .semi td { padding: 5pt 7pt; }
+  .semi .product-name { font-size: 11pt; }
+
+  .semi .totals-wrap { margin-bottom: 12pt; }
+  .semi .totals-row { padding: 3pt 0; font-size: 10pt; }
+  .semi .totals-row.grand { font-size: 12pt; padding: 5pt 0; }
+  .semi .totals-row.net { font-size: 11pt; padding: 5pt 0; }
+  .semi .totals-row.due { font-size: 10.5pt; padding-top: 4pt; }
+
+  .semi .payments { margin-bottom: 10pt; }
+  .semi .pay-row { font-size: 10pt; padding: 3pt 0; }
+  .semi .pay-meta { font-size: 9pt; }
+  .semi .pay-amount { font-size: 10.5pt; }
+
+  .semi .notes { font-size: 10pt; padding: 5pt 8pt; margin-bottom: 10pt; }
+  .semi .signature-row { margin-top: 18pt; margin-bottom: 10pt; }
+  .semi .sig-line { font-size: 9pt; }
+  .semi .footer { font-size: 8.5pt; }
+
+  /* ── Compact mode (10+ items): aggressive compression ── */
+  .page.compact { padding: 7mm 11mm 7mm 11mm; }
+
+  .compact .header { padding-bottom: 5pt; margin-bottom: 6pt; }
+  .compact .header img { height: 55pt; margin-bottom: 3pt; }
+  .compact .header .company-name { font-size: 13pt; letter-spacing: 1pt; }
+  .compact .header .company-tagline { font-size: 7pt; margin-top: 1pt; }
+  .compact .header .company-contacts { font-size: 8pt; margin-top: 3pt; line-height: 1.5; }
+  .compact .header .company-contacts span { margin: 0 5pt; }
+
+  .compact .invoice-title-row { margin-bottom: 6pt; padding-bottom: 5pt; }
+  .compact .invoice-title-row h2 { font-size: 12pt; letter-spacing: 2pt; }
+  .compact .invoice-meta { font-size: 8.5pt; line-height: 1.6; }
+
+  .compact .bill-to { margin-bottom: 6pt; padding-bottom: 6pt; }
+  .compact .bill-to .label { font-size: 7pt; margin-bottom: 2pt; }
+  .compact .bill-to .customer-name { font-size: 11pt; }
+  .compact .bill-to .customer-address { font-size: 8.5pt; margin-top: 1pt; }
+
+  .compact table { font-size: 9pt; margin-bottom: 6pt; }
+  .compact th { padding: 4pt 5pt; font-size: 7.5pt; }
+  .compact td { padding: 3.5pt 5pt; }
+  .compact .product-name { font-size: 9pt; }
+
+  .compact .totals-wrap { margin-bottom: 8pt; }
+  .compact .totals { width: 55mm; }
+  .compact .totals-row { padding: 2pt 0; font-size: 8.5pt; }
+  .compact .totals-row.grand { font-size: 10pt; padding: 3pt 0; margin-top: 1pt; }
+  .compact .totals-row.net { font-size: 10pt; padding: 3pt 0; margin-top: 1pt; }
+  .compact .totals-row.due { font-size: 9.5pt; padding-top: 3pt; margin-top: 1pt; }
+
+  .compact .payments { margin-bottom: 7pt; }
+  .compact .payments .section-label { font-size: 7.5pt; padding-bottom: 2pt; margin-bottom: 4pt; }
+  .compact .pay-row { font-size: 8.5pt; padding: 2pt 0; }
+  .compact .pay-meta { font-size: 7.5pt; }
+  .compact .pay-amount { font-size: 9pt; }
+
+  .compact .notes { font-size: 8.5pt; padding: 4pt 7pt; margin-bottom: 7pt; }
+  .compact .signature-row { margin-top: 10pt; margin-bottom: 6pt; }
+  .compact .sig-line { font-size: 8pt; }
+  .compact .footer { font-size: 7.5pt; padding-top: 3pt; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .page {
+      margin: 0;
+      border: none;
+      padding: 14mm 18mm;
+      width: 210mm;
+      min-height: 297mm;
+    }
+    .page.semi    { padding: 9mm 14mm; }
+    .page.compact { padding: 6mm 10mm; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <a href="javascript:history.back()">Back</a>
+</div>
+
+{% with item_count=bill.items.count %}
+<div class="page{% if item_count >= 10 %} compact{% elif item_count >= 6 %} semi{% endif %}">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="{% static 'images/logo.jpeg' %}" alt="{{ company.company_name }}">
+    <div class="company-name">{{ company.company_name }}</div>
+    {% if company.tagline %}<div class="company-tagline">{{ company.tagline }}</div>{% endif %}
+    <div class="company-contacts">
+      {% if company.address %}<span>{{ company.address }}</span>{% endif %}
+      {% if company.phone1 %}<span>Tel: {{ company.phone1 }}</span>{% endif %}
+      {% if company.phone2 %}<span>Tel: {{ company.phone2 }}</span>{% endif %}
+      {% if company.email %}<span>{{ company.email }}</span>{% endif %}
+      {% if company.website %}<span>{{ company.website }}</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- Invoice title + meta -->
+  <div class="invoice-title-row">
+    <div>
+      <h2>Invoice</h2>
+    </div>
+    <div class="invoice-meta">
+      <p><strong>Invoice No.:</strong> {{ bill.bill_number }}</p>
+      <p><strong>Date:</strong> {{ bill.bill_date|date:"d F Y" }}</p>
+      <p><strong>Payment Method:</strong> {{ bill.get_payment_method_display }}</p>
+      {% if bill.created_by %}<p><strong>Prepared By:</strong> {{ bill.created_by.get_full_name|default:bill.created_by.username }}</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- Bill To -->
+  <div class="bill-to">
+    <div class="label">Bill To</div>
+    <div class="customer-name">{{ bill.customer.name }}</div>
+    {% if bill.customer.address %}<div class="customer-address">{{ bill.customer.address }}</div>{% endif %}
+  </div>
+
+  <!-- Items -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">#</th>
+        <th>Description</th>
+        <th class="r" style="width:12%">Qty</th>
+        <th class="r" style="width:22%">Unit Price (Rs.)</th>
+        <th class="r" style="width:22%">Amount (Rs.)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in bill.items.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><span class="product-name">{{ item.product.name }}</span></td>
+        <td class="r">{{ item.quantity|floatformat:3 }}</td>
+        <td class="r">{{ item.unit_price|floatformat:2 }}</td>
+        <td class="r" style="font-weight:bold;font-size:13pt;">{{ item.line_total|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals -->
+  <div class="totals-wrap">
+    <div class="totals">
+      <div class="totals-row">
+        <span class="lbl">Subtotal</span>
+        <span>Rs. {{ bill.subtotal|floatformat:2 }}</span>
+      </div>
+      {% if bill.discount_amount > 0 %}
+      <div class="totals-row">
+        <span class="lbl">Discount</span>
+        <span>&minus; Rs. {{ bill.discount_amount|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      <div class="totals-row grand">
+        <span>Bill Total</span>
+        <span>Rs. {{ bill.total_amount|floatformat:2 }}</span>
+      </div>
+      {% if customer_balance > 0 %}
+      <div class="totals-row" style="color:#1a6e2e;">
+        <span>Credit Balance</span>
+        <span>&minus; Rs. {{ customer_balance|floatformat:2 }}</span>
+      </div>
+      {% elif customer_balance < 0 %}
+      <div class="totals-row" style="color:#b91c1c;">
+        <span>Outstanding Balance</span>
+        <span>+ Rs. {{ customer_balance_abs|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      <div class="totals-row net">
+        <span>Net Value</span>
+        <span>Rs. {{ net_value|floatformat:2 }}</span>
+      </div>
+      {% if bill.amount_paid > 0 %}
+      <div class="totals-row">
+        <span class="lbl">Cash / Cheque Received</span>
+        <span>&minus; Rs. {{ bill.amount_paid|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      {% if bill.amount_due > 0 %}
+      <div class="totals-row due">
+        <span>Balance Due</span>
+        <span>Rs. {{ bill.amount_due|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment records -->
+  {% if bill.payments.all %}
+  <div class="payments">
+    <div class="section-label">Payment Records</div>
+    {% for p in bill.payments.all %}
+    <div class="pay-row">
+      <div>
+        <div class="pay-method">{{ p.get_method_display }}</div>
+        <div class="pay-meta">
+          {{ p.payment_date|date:"d M Y" }}{% if p.method == 'CHEQUE' %} &nbsp;&middot;&nbsp; Cheque #{{ p.cheque_number }} &nbsp;&middot;&nbsp; {{ p.bank_name }}{% if p.maturity_date %} &nbsp;&middot;&nbsp; Matures {{ p.maturity_date|date:"d M Y" }}{% endif %}{% endif %}
+        </div>
+      </div>
+      <div class="pay-amount">Rs. {{ p.amount|floatformat:2 }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Notes -->
+  {% if bill.notes %}
+  <div class="notes"><strong>Notes:</strong> {{ bill.notes }}</div>
+  {% endif %}
+
+  <!-- Signatures -->
+  <div class="signature-row">
+    <div class="sig-box">
+      <div class="sig-line">Authorised Signature</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line">Received By</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>{{ company.company_name }} &bull; {{ bill.bill_number }}</span>
+    <span>Printed: {% now "d M Y H:i" %}</span>
+  </div>
+
+</div>
+{% endwith %}
+</body>
+</html>

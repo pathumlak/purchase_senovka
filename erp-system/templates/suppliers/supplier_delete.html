@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Delete Supplier — SENOVKA ERP{% endblock %}
+{% block page_title %}Delete Supplier{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="p-8 text-center">
+      <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-5">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Delete Supplier</h2>
+      <p class="text-sm text-gray-500 mb-1">
+        Are you sure you want to delete <span class="font-semibold text-gray-800">{{ supplier.name }}</span>?
+      </p>
+      <p class="text-xs text-red-500 mt-2">All supply receipts for this supplier will also be deleted. Stock levels will NOT be reversed. This cannot be undone.</p>
+    </div>
+    <div class="flex gap-3 px-6 py-4 bg-gray-50">
+      <a href="{% url 'suppliers:supplier_detail' supplier.pk %}"
+         class="flex-1 text-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
+      <form method="POST" class="flex-1">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 20px; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .meta { font-size: 9px; color: #555; margin-bottom: 14px; }
+  .filters { font-size: 9px; color: #444; margin-bottom: 10px; background: #f5f5f5; padding: 6px 8px; border-radius: 4px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 14px; }
+  .sum-box { border: 1px solid #ddd; border-radius: 4px; padding: 7px 14px; }
+  .sum-box .lbl { font-size: 8px; color: #888; text-transform: uppercase; }
+  .sum-box .val { font-size: 13px; font-weight: bold; color: #1d4ed8; margin-top: 1px; }
+  .sum-box.green .val { color: #15803d; }
+  .sum-box.red   .val { color: #dc2626; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th { padding: 5px 7px; text-align: left; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  th.r, td.r { text-align: right; }
+  td { padding: 5px 7px; border-bottom: 1px solid #e5e7eb; font-size: 9px; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .completed { background: #dcfce7; color: #15803d; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .pending   { background: #fef9c3; color: #92400e; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .cancelled { background: #f3f4f6; color: #6b7280; padding: 1px 5px; border-radius: 3px; }
+  tfoot td { font-weight: bold; background: #eff6ff; border-top: 2px solid #1d4ed8; font-size: 10px; }
+  .footer { margin-top: 18px; font-size: 8px; color: #aaa; text-align: right; }
+</style>
+</head>
+<body>
+<h1>Split Sales Report &mdash; SENOVKA ERP</h1>
+<p class="meta">Generated: {{ generated_at|date:"d M Y H:i" }}</p>
+
+{% if q or status or customer or date_from or date_to %}
+<div class="filters">
+  <strong>Filters:</strong>
+  {% if q %} Search: "{{ q }}"{% endif %}
+  {% if status %} Status: {{ status }}{% endif %}
+  {% if customer %} Customer: {{ customer }}{% endif %}
+  {% if date_from %} From: {{ date_from }}{% endif %}
+  {% if date_to %} To: {{ date_to }}{% endif %}
+</div>
+{% endif %}
+
+<div class="summary">
+  <div class="sum-box"><div class="lbl">Records</div><div class="val">{{ total_records }}</div></div>
+  <div class="sum-box"><div class="lbl">Total Amount</div><div class="val">Rs. {{ total_amount|floatformat:2 }}</div></div>
+  <div class="sum-box green"><div class="lbl">Total Paid</div><div class="val">Rs. {{ total_paid|floatformat:2 }}</div></div>
+  <div class="sum-box red"><div class="lbl">Total Due</div><div class="val">Rs. {{ total_due|floatformat:2 }}</div></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Bill No.</th>
+      <th>Customer</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th class="r">Total (Rs.)</th>
+      <th class="r">Bal. Used (Rs.)</th>
+      <th class="r">Paid (Rs.)</th>
+      <th class="r">Due (Rs.)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in bills %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><strong>{{ b.bill_number }}</strong></td>
+      <td>{{ b.customer.name }}</td>
+      <td>{{ b.bill_date|date:"d-m-Y" }}</td>
+      <td>
+        {% if b.status == 'COMPLETED' %}<span class="completed">Completed</span>
+        {% elif b.status == 'PENDING'  %}<span class="pending">Pending</span>
+        {% else %}<span class="cancelled">Cancelled</span>{% endif %}
+      </td>
+      <td class="r"><strong>{{ b.total_amount|floatformat:2 }}</strong></td>
+      <td class="r">{{ b.balance_used|floatformat:2 }}</td>
+      <td class="r">{{ b.amount_paid|floatformat:2 }}</td>
+      <td class="r">{% if b.amount_due > 0 %}<strong style="color:#dc2626;">{{ b.amount_due|floatformat:2 }}</strong>{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="5" class="r">Grand Total:</td>
+      <td class="r">Rs. {{ total_amount|floatformat:2 }}</td>
+      <td class="r">Rs. {{ total_bal|floatformat:2 }}</td>
+      <td class="r">Rs. {{ total_paid|floatformat:2 }}</td>
+      <td class="r" style="color:#dc2626;">Rs. {{ total_due|floatformat:2 }}</td>
+    </tr>
+  </tfoot>
+</table>
+<p class="footer">SENOVKA ERP &bull; Split Sales Report &bull; {{ generated_at|date:"d M Y" }}</p>
+</body>
+</html>

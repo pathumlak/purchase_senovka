@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Machine Running Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #111827;
+        }
+
+        .report-header {
+            margin-bottom: 14px;
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+
+        .meta-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .meta-grid td {
+            padding: 3px 4px;
+            vertical-align: top;
+        }
+
+        .meta-label {
+            font-weight: 700;
+            width: 140px;
+            color: #374151;
+        }
+
+        table.report {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        table.report th,
+        table.report td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 11px;
+        }
+
+        table.report th {
+            background: #f3f4f6;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .empty-note {
+            margin-top: 12px;
+            color: #6b7280;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1 class="report-title">Daily Machine Running Report</h1>
+    </div>
+
+    <table class="meta-grid">
+        <tr>
+            <td class="meta-label">Generated At</td>
+            <td>{{ generated_at|date:"d M Y, h:i A" }}</td>
+            <td class="meta-label">Month</td>
+            <td>{{ month_label }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Date From</td>
+            <td>{% if start_date %}{{ start_date|date:"d M Y" }}{% else %}All{% endif %}</td>
+            <td class="meta-label">Date To</td>
+            <td>{% if end_date %}{{ end_date|date:"d M Y" }}{% else %}All{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Machine Name</td>
+            <td>{{ machine_name|default:"All" }}</td>
+            <td class="meta-label">Operator</td>
+            <td>{{ machine_operator|default:"All" }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Item</td>
+            <td>{% if selected_item %}{{ selected_item.name }}{% else %}All{% endif %}</td>
+            <td class="meta-label">Total Rows</td>
+            <td>{{ total_rows }}</td>
+        </tr>
+    </table>
+
+    {% if machine_runs %}
+    <table class="report">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Machine</th>
+                <th>Status</th>
+                <th>Item</th>
+                <th>Operator</th>
+                <th>Crusher Operator</th>
+                <th>Material Mixer</th>
+                <th>Extra Work</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in machine_runs %}
+            <tr{% if run.machine_not_working %} style="background:#fef2f2;"{% endif %}>
+                <td>{{ run.production_date|date:"d M Y" }}</td>
+                <td>{{ run.machine_name }}</td>
+                <td>{% if run.machine_not_working %}<strong style="color:#dc2626;">Not Working</strong>{% else %}Working{% endif %}</td>
+                <td>{% if run.item %}{{ run.item.name }}{% else %}—{% endif %}</td>
+                <td>{{ run.machine_operator|default:"—" }}</td>
+                <td>{{ run.crusher_operator|default:"—" }}</td>
+                <td>{{ run.material_mixer|default:"—" }}</td>
+                <td>{{ run.extra_work_employee|default:"—" }}</td>
+                <td>{{ run.notes|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-note">No records found for the selected filters.</p>
+    {% endif %}
+</body>
+</html>

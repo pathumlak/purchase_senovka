@@ -1,0 +1,8 @@
+Django>=3.2,<4.0
+djangorestframework
+tailwindcss
+django-tailwind
+psycopg2-binary
+xhtml2pdf  # If using PostgreSQL as the database
+openpyxl
+# Add any other dependencies as needed for your ERP system

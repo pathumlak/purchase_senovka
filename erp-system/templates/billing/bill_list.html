@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}Bills - ERP System{% endblock %}
+{% block page_title %}Billing Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">All Bills</h2>
+      <p class="mt-1 text-sm text-gray-500">Manage customer invoices, payments, and billing records.</p>
+    </div>
+    <a href="{% url 'billing:bill_create' %}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Create New Bill
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3">
+      <div class="p-2 bg-primary-50 rounded-lg">
+        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <div><p class="text-sm text-gray-500">Filtered Bills</p><p class="text-2xl font-bold text-gray-900">{{ total_records }}</p></div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3">
+      <div class="p-2 bg-green-50 rounded-lg">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div><p class="text-sm text-gray-500">Total Amount</p><p class="text-2xl font-bold text-gray-900">Rs. {{ total_amount|floatformat:2 }}</p></div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3">
+      <div class="p-2 bg-amber-50 rounded-lg">
+        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div><p class="text-sm text-gray-500">Total Due</p><p class="text-2xl font-bold text-amber-700">Rs. {{ total_due|floatformat:2 }}</p></div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+    <form method="get" class="space-y-3">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div class="md:col-span-4 relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
+          <input type="text" name="q" value="{{ q }}" placeholder="Search bill number or customer…"
+                 class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div class="md:col-span-3">
+          <select name="status" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">All Statuses</option>
+            <option value="PENDING"   {% if status == 'PENDING'   %}selected{% endif %}>Pending</option>
+            <option value="COMPLETED" {% if status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+            <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <select name="method" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">All Methods</option>
+            {% for val, label in method_choices %}<option value="{{ val }}" {% if method == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="md:col-span-3 flex gap-2">
+          <button type="submit" class="flex-1 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">Apply</button>
+          <a href="{% url 'billing:bill_list' %}?date_from=&date_to=" class="flex-1 text-center px-4 py-2.5 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition">Reset</a>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div class="md:col-span-4">
+          <input type="text" name="customer" value="{{ customer }}" placeholder="Filter by customer name…"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div class="md:col-span-4">
+          <input type="date" name="date_from" value="{{ date_from }}"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div class="md:col-span-4">
+          <input type="date" name="date_to" value="{{ date_to }}"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+      </div>
+      <p class="text-xs text-gray-400">Showing the current month by default — pick a range above, or <a href="{% url 'billing:bill_list' %}?date_from=&date_to=" class="text-primary-600 hover:underline font-medium">view all time</a>.</p>
+    </form>
+  </div>
+
+  <!-- Export + count -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <p class="text-sm text-gray-600">
+      <span class="font-semibold text-gray-900">{{ total_records }}</span> bill{{ total_records|pluralize }}
+      — Total: <span class="font-semibold">Rs. {{ total_amount|floatformat:2 }}</span>
+      — Due: <span class="font-semibold text-amber-700">Rs. {{ total_due|floatformat:2 }}</span>
+    </p>
+    <div class="flex gap-2">
+      <a href="{% url 'billing:export_excel' %}?q={{ q }}&status={{ status }}&customer={{ customer }}&date_from={{ date_from }}&date_to={{ date_to }}&method={{ method }}"
+         class="flex items-center gap-1.5 px-3 py-2 border border-green-200 bg-green-50 text-green-700 text-xs font-medium rounded-lg hover:bg-green-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Excel
+      </a>
+      <a href="{% url 'billing:export_pdf' %}?q={{ q }}&status={{ status }}&customer={{ customer }}&date_from={{ date_from }}&date_to={{ date_to }}&method={{ method }}"
+         class="flex items-center gap-1.5 px-3 py-2 border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium rounded-lg hover:bg-rose-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Bill No.</th>
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Method</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Paid</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Due</th>
+            <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for bill in bills %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-4">
+              <a href="{% url 'billing:bill_detail' bill.pk %}" class="text-sm font-bold text-primary-700 hover:underline">{{ bill.bill_number }}</a>
+            </td>
+            <td class="px-4 py-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ bill.customer.name|first|upper }}</div>
+                <span class="text-sm text-gray-900">{{ bill.customer.name }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{{ bill.bill_date|date:"d M Y" }}</td>
+            <td class="px-4 py-4">
+              <span class="text-xs text-gray-600">{{ bill.get_payment_method_display }}</span>
+            </td>
+            <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900">Rs. {{ bill.total_amount|floatformat:2 }}</td>
+            <td class="px-4 py-4 text-right text-sm text-gray-700">Rs. {{ bill.amount_paid|floatformat:2 }}</td>
+            <td class="px-4 py-4 text-right">
+              {% if bill.amount_due > 0 %}
+              <span class="text-sm font-semibold text-red-600">Rs. {{ bill.amount_due|floatformat:2 }}</span>
+              {% else %}
+              <span class="text-sm text-gray-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-4 text-center">
+              {% if bill.status == 'COMPLETED' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Completed</span>
+              {% elif bill.status == 'PENDING' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pending</span>
+              {% else %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Cancelled</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-4 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'billing:bill_detail' bill.pk %}" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="View">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </a>
+                {% if bill.status == 'PENDING' %}
+                <a href="{% url 'billing:settle_bill' bill.pk %}" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Settle Payment">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </a>
+                {% endif %}
+                <a href="{% url 'billing:bill_print' bill.pk %}" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print" target="_blank">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <p class="text-sm font-medium text-gray-900">No bills found</p>
+                <a href="{% url 'billing:bill_create' %}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Create First Bill
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+      <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+      <div class="flex items-center gap-1.5">
+        {% if page_obj.has_previous %}<a href="?q={{ q }}&status={{ status }}&customer={{ customer }}&date_from={{ date_from }}&date_to={{ date_to }}&method={{ method }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>{% endif %}
+        {% for num in page_obj.paginator.page_range %}{% if num == page_obj.number %}<span class="px-2.5 py-1.5 rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ num }}</span>{% elif num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %}<a href="?page={{ num }}" class="px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ num }}</a>{% endif %}{% endfor %}
+        {% if page_obj.has_next %}<a href="?q={{ q }}&status={{ status }}&customer={{ customer }}&date_from={{ date_from }}&date_to={{ date_to }}&method={{ method }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

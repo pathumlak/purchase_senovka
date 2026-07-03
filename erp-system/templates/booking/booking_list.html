@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}Order Bookings - ERP System{% endblock %}
+{% block page_title %}Order Bookings{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">Order Bookings</h2>
+      <p class="text-sm text-gray-500 mt-0.5">Manage customer booking orders and convert them to bills.</p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <a href="{% url 'booking:export_excel' %}?{{ filter_qs }}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export Excel
+      </a>
+      <a href="{% url 'booking:export_pdf' %}?{{ filter_qs }}"
+         class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Export PDF
+      </a>
+      <button type="button" id="printSelectedBtn" onclick="printSelected()"
+              class="hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-purple-200 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print Selected (<span id="selectedCount">0</span>)
+      </button>
+      <a href="{% url 'booking:booking_create' %}"
+         class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition shadow-sm">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        New Booking
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <p class="text-xs text-gray-400 uppercase tracking-wide">Total Bookings</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">{{ total_records }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <p class="text-xs text-gray-400 uppercase tracking-wide">Total Amount</p>
+      <p class="text-2xl font-bold text-primary-700 mt-1">Rs. {{ total_amount|floatformat:2 }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <p class="text-xs text-gray-400 uppercase tracking-wide">Pending</p>
+      <p class="text-2xl font-bold text-amber-600 mt-1">{{ pending_count }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <p class="text-xs text-gray-400 uppercase tracking-wide">Confirmed</p>
+      <p class="text-2xl font-bold text-blue-600 mt-1">{{ confirmed_count }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Booking no. or customer…"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div class="min-w-36">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Customer</label>
+        <select name="customer" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+          <option value="">All Customers</option>
+          {% for c in customers %}
+          <option value="{{ c.name }}" {% if customer == c.name %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="min-w-32">
+        <label class="block text-xs font-medium text-gray-600 mb-1">From</label>
+        <input type="date" name="date_from" value="{{ date_from }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div class="min-w-32">
+        <label class="block text-xs font-medium text-gray-600 mb-1">To</label>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+      </div>
+      <div class="min-w-32">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+          <option value="">All Status</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+          Filter
+        </button>
+        <a href="{% url 'booking:booking_list' %}"
+           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          Clear
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Hidden print form (submitted by JS) -->
+  <form id="printForm" method="post" action="{% url 'booking:print_selected' %}" target="_blank" class="hidden">
+    {% csrf_token %}
+  </form>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-3 text-left">
+              <input type="checkbox" id="selectAll" onchange="toggleAll(this)"
+                     class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer">
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Booking No.</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Customer</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Booking Date</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Order Sending</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total (Rs.)</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Bill</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for b in bookings %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-3 py-3">
+              <input type="checkbox" name="row-check" value="{{ b.pk }}" onchange="updateSelection()"
+                     class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer">
+            </td>
+            <td class="px-4 py-3 text-gray-500">{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
+            <td class="px-4 py-3">
+              <a href="{% url 'booking:booking_detail' b.pk %}" class="font-semibold text-primary-700 hover:underline">{{ b.booking_number }}</a>
+            </td>
+            <td class="px-4 py-3 text-gray-900">{{ b.customer.name }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ b.booking_date|date:"d M Y" }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ b.order_sending_date|date:"d M Y"|default:"—" }}</td>
+            <td class="px-4 py-3">
+              {% if b.status == 'PENDING' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+              {% elif b.status == 'CONFIRMED' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Confirmed</span>
+              {% else %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Cancelled</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ b.total_amount|floatformat:2 }}</td>
+            <td class="px-4 py-3">
+              {% if b.bill %}
+              <a href="{% url 'billing:bill_detail' b.bill.pk %}" class="text-xs text-primary-600 hover:underline font-medium">{{ b.bill.bill_number }}</a>
+              {% else %}
+              <span class="text-gray-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1 flex-wrap">
+                <a href="{% url 'booking:booking_detail' b.pk %}"
+                   class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition">
+                  View
+                </a>
+                <a href="{% url 'booking:quotation_pdf' b.pk %}"
+                   class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-50 rounded hover:bg-red-100 transition">
+                  PDF
+                </a>
+                <a href="{% url 'booking:quotation_excel' b.pk %}"
+                   class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 transition">
+                  Excel
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="px-4 py-10 text-center text-gray-400 text-sm">No booking orders found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-4 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+      <p>
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ total_records }} bookings
+      </p>
+      <div class="flex gap-1">
+        {% if page_obj.has_previous %}
+        <a href="?{{ filter_qs }}&page={{ page_obj.previous_page_number }}"
+           class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Prev</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <span class="px-3 py-1.5 border border-primary-500 bg-primary-50 text-primary-700 rounded-lg font-medium">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+          <a href="?{{ filter_qs }}&page={{ num }}" class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="?{{ filter_qs }}&page={{ page_obj.next_page_number }}"
+           class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+function updateSelection() {
+  const checks  = document.querySelectorAll('input[name="row-check"]:checked');
+  const count   = checks.length;
+  const btn     = document.getElementById('printSelectedBtn');
+  const countEl = document.getElementById('selectedCount');
+  countEl.textContent = count;
+  btn.classList.toggle('hidden', count === 0);
+
+  const all = document.querySelectorAll('input[name="row-check"]');
+  document.getElementById('selectAll').indeterminate = count > 0 && count < all.length;
+  document.getElementById('selectAll').checked = count === all.length && all.length > 0;
+}
+
+function toggleAll(master) {
+  document.querySelectorAll('input[name="row-check"]').forEach(cb => cb.checked = master.checked);
+  updateSelection();
+}
+
+function printSelected() {
+  const ids    = [...document.querySelectorAll('input[name="row-check"]:checked')].map(cb => cb.value);
+  const form   = document.getElementById('printForm');
+  // clear previous hidden inputs
+  form.querySelectorAll('input[name="ids"]').forEach(el => el.remove());
+  ids.forEach(id => {
+    const inp = document.createElement('input');
+    inp.type  = 'hidden';
+    inp.name  = 'ids';
+    inp.value = id;
+    form.appendChild(inp);
+  });
+  form.submit();
+}
+</script>
+{% endblock %}

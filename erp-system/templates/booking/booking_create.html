@@ -1,0 +1,585 @@
+{% extends 'base.html' %}
+{% block title %}New Booking - ERP System{% endblock %}
+{% block page_title %}Create New Booking{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <a href="{% url 'booking:booking_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>Back to Bookings
+  </a>
+
+  <form method="POST" id="booking-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="customer_id" id="f-customer-id">
+    <input type="hidden" name="items_json"  id="f-items-json">
+
+    <!-- ── 1. Customer & Booking Details ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Customer &amp; Booking Details
+        </h3>
+      </div>
+      <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Customer <span class="text-red-500">*</span></label>
+          <div class="relative" id="customer-search-wrap">
+            <input type="text" id="customer-search-input" placeholder="Type to search customer…"
+                   autocomplete="off"
+                   class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+            <div id="customer-dropdown"
+                 class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Booking Date <span class="text-red-500">*</span></label>
+          <input type="date" name="booking_date" value="{{ today }}"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Order Sending Date</label>
+          <input type="date" name="order_sending_date"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+          <input type="text" name="notes" placeholder="Optional notes…"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none transition">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. Products ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Products
+        </h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p id="no-customer-msg" class="text-sm text-gray-400 italic">Select a customer above to load available products.</p>
+
+        <!-- Product card grid -->
+        <div id="product-grid-wrap" class="hidden">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="relative flex-1 max-w-sm">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+              </svg>
+              <input type="text" id="product-search-input" placeholder="Search products…"
+                     autocomplete="off" oninput="filterProductGrid(this.value)"
+                     class="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition placeholder-gray-400">
+              <button id="product-search-clear" onclick="clearProductSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p id="product-grid-hint" class="text-xs text-gray-500">Click a product to add it to the booking</p>
+          </div>
+          <p id="product-no-results" class="hidden text-xs text-gray-400 italic py-2">No products match your search.</p>
+          <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1 pb-1"></div>
+        </div>
+
+        <!-- Items table -->
+        <div id="items-wrap" class="hidden overflow-x-auto rounded-lg border border-gray-200">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Avail. Qty</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-28">Quantity</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-32">Unit Price (Rs.)</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase w-24">Disc %</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Disc Amt</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Line Total</th>
+                <th class="px-3 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody" class="divide-y divide-gray-100 bg-white"></tbody>
+          </table>
+        </div>
+        <p id="no-items-msg" class="hidden text-xs text-gray-400 text-center py-2">No products added yet.</p>
+      </div>
+    </div>
+
+    <!-- ── 3. Production Needs ── -->
+    <div id="production-panel" class="hidden bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Production Requirements
+        </h3>
+        <span id="prod-loading" class="hidden text-xs text-gray-400 animate-pulse">Calculating…</span>
+      </div>
+      <div class="p-6">
+        <div class="overflow-x-auto rounded-lg border border-gray-200">
+          <table class="min-w-full text-sm divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">In Stock</th>
+                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Other Pending Orders</th>
+                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">This Order</th>
+                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Total Required</th>
+                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Production Needed</th>
+              </tr>
+            </thead>
+            <tbody id="prod-tbody" class="divide-y divide-gray-100 bg-white"></tbody>
+          </table>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Production needed = Total required across all pending orders minus current stock. Zero means stock is sufficient.</p>
+      </div>
+    </div>
+
+    <!-- ── 4. Booking Summary ── -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900">Booking Summary</h3>
+      </div>
+      <div class="p-6">
+        <div class="max-w-xs ml-auto space-y-2 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span id="s-subtotal" class="font-medium">Rs. 0.00</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Total Discount</span><span id="s-discount" class="font-medium text-red-600">− Rs. 0.00</span></div>
+          <div class="flex justify-between border-t pt-2"><span class="text-gray-700 font-semibold">Total Amount</span><span id="s-total" class="font-bold text-lg">Rs. 0.00</span></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-4">This is a quotation/booking. No inventory is deducted until the order is confirmed.</p>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex items-center justify-end gap-3 pb-4">
+      <a href="{% url 'booking:booking_list' %}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
+      <button type="button" onclick="submitBooking()"
+              class="px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+        Create Booking
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Qty Prompt Modal -->
+<div id="qty-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(17,24,39,0.45)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs" onclick="event.stopPropagation()">
+    <div class="px-6 pt-6 pb-2">
+      <div class="flex items-start justify-between mb-1">
+        <span class="text-xs font-semibold text-primary-600 uppercase tracking-wide">Add to Booking</span>
+        <button onclick="closeQtyPrompt()" class="p-1 -mt-1 -mr-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p id="qm-name" class="text-base font-bold text-gray-900 leading-snug"></p>
+      <p id="qm-meta" class="text-xs text-gray-400 mt-0.5 mb-4"></p>
+      <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        Quantity <span class="normal-case font-normal">(Available: <span id="qm-avail" class="font-semibold text-gray-700"></span>)</span>
+      </label>
+      <input type="number" id="qty-input" min="1" step="1" value="1"
+             class="w-full px-4 py-3 text-3xl font-bold text-center border-2 border-primary-400 rounded-xl outline-none focus:ring-4 focus:ring-primary-100 transition">
+
+      <!-- Price section — shown only when no custom price is set for this customer -->
+      <div id="qm-price-section" class="hidden mt-4 pt-4 border-t border-amber-100">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Unit Price
+          <span class="ml-1 normal-case font-normal text-amber-600">no price set — enter now</span>
+        </label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">Rs.</span>
+          <input type="number" id="price-input" min="0" step="0.01" value="" placeholder="0.00"
+                 class="w-full pl-12 pr-4 py-3 text-3xl font-bold text-right border-2 border-amber-400 rounded-xl outline-none focus:ring-4 focus:ring-amber-100 transition placeholder-gray-300">
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 px-6 py-4">
+      <button onclick="closeQtyPrompt()" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+      <button onclick="confirmAddProduct()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Add</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let _customer = null;
+let _items    = [];
+
+// ── Customer search ────────────────────────────────────────────────────────
+const ALL_CUSTOMERS = [{% for c in customers %}{"id":{{ c.id }},"name":"{{ c.name|escapejs }}"},{% endfor %}];
+
+(function initCustomerSearch() {
+  const input    = document.getElementById('customer-search-input');
+  const dropdown = document.getElementById('customer-dropdown');
+
+  input.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    if (!q) { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; return; }
+    const hits = ALL_CUSTOMERS.filter(c => c.name.toLowerCase().includes(q)).slice(0, 25);
+    dropdown.innerHTML = hits.length
+      ? hits.map(c => `<div class="cs-opt px-4 py-2.5 text-sm text-gray-800 hover:bg-primary-50 hover:text-primary-700 cursor-pointer border-b border-gray-100 last:border-0" data-id="${c.id}" data-name="${c.name.replace(/"/g,'&quot;')}">${c.name}</div>`).join('')
+      : '<p class="px-4 py-3 text-sm text-gray-400 italic">No customers found.</p>';
+    dropdown.querySelectorAll('.cs-opt').forEach(el =>
+      el.addEventListener('mousedown', e => { e.preventDefault(); selectCustomer(parseInt(el.dataset.id), el.dataset.name); })
+    );
+    dropdown.classList.remove('hidden');
+  });
+
+  input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 150));
+  input.addEventListener('focus', function () { if (this.value.trim()) this.dispatchEvent(new Event('input')); });
+})();
+
+function selectCustomer(cid, name) {
+  document.getElementById('customer-search-input').value = name;
+  document.getElementById('customer-dropdown').classList.add('hidden');
+  document.getElementById('f-customer-id').value = cid;
+
+  fetch(`/billing/api/customer/${cid}/`)
+    .then(r => r.json())
+    .then(data => {
+      _customer = data;
+
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '';
+      // Reset search when customer changes
+      const psi = document.getElementById('product-search-input');
+      if (psi) { psi.value = ''; document.getElementById('product-search-clear').classList.add('hidden'); }
+      document.getElementById('product-no-results').classList.add('hidden');
+
+      data.products.forEach(p => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.dataset.productId = p.id;
+        card.dataset.search    = (p.name + ' ' + p.category + ' ' + (p.size || '')).toLowerCase();
+        card.onclick = () => addProductFromGrid(p, card);
+        card.className = 'product-card text-left p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all cursor-pointer w-full';
+        card.innerHTML = `
+          <p class="font-semibold text-sm text-gray-900 truncate leading-tight">${p.name}${p.size ? ' <span class="text-xs font-normal text-gray-500">('+p.size+')</span>' : ''}</p>
+          <p class="text-xs text-gray-400 mt-0.5 truncate">${p.category}</p>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-xs text-gray-500">Qty: <span class="font-medium text-gray-700">${p.available_qty}</span></span>
+            <span class="text-xs font-bold text-primary-700">Rs.${fmt(p.unit_price)}</span>
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      document.getElementById('no-customer-msg').classList.add('hidden');
+      document.getElementById('product-grid-wrap').classList.remove('hidden');
+      updateGridStates();
+      renderSummary();
+    })
+    .catch(() => alert('Failed to load customer data. Check your connection.'));
+}
+
+// ── Qty prompt modal ───────────────────────────────────────────────────────
+let _qtyProduct = null;
+
+function addProductFromGrid(p) {
+  const existing = _items.findIndex(i => i.product_id === p.id);
+  if (existing >= 0) {
+    // Already added — scroll to row and focus its qty input
+    const rows = document.querySelectorAll('#items-tbody tr');
+    if (rows[existing]) {
+      rows[existing].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const inp = rows[existing].querySelector('input[type="number"]');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+    return;
+  }
+  _qtyProduct = p;
+  document.getElementById('qm-name').textContent = p.name + (p.size ? ` (${p.size})` : '');
+  document.getElementById('qm-meta').textContent  = p.category + (p.has_custom_price ? '  ·  Rs.' + fmt(p.unit_price) : '');
+  document.getElementById('qm-avail').textContent = p.available_qty;
+
+  const priceSection = document.getElementById('qm-price-section');
+  if (p.has_custom_price) {
+    priceSection.classList.add('hidden');
+  } else {
+    priceSection.classList.remove('hidden');
+    document.getElementById('price-input').value = '';
+  }
+
+  const inp = document.getElementById('qty-input');
+  inp.value = '1';
+  document.getElementById('qty-modal').classList.remove('hidden');
+  setTimeout(() => { inp.focus(); inp.select(); }, 40);
+}
+
+function closeQtyPrompt() {
+  document.getElementById('qty-modal').classList.add('hidden');
+  _qtyProduct = null;
+}
+
+function confirmAddProduct() {
+  if (!_qtyProduct) return;
+  const p   = _qtyProduct;
+  const qty = Math.max(1, parseInt(document.getElementById('qty-input').value) || 1);
+
+  let unitPrice = parseFloat(p.unit_price) || 0;
+  if (!p.has_custom_price) {
+    const entered = parseFloat(document.getElementById('price-input').value);
+    if (!isNaN(entered) && entered >= 0) unitPrice = entered;
+  }
+
+  closeQtyPrompt();
+  _items.push({
+    product_id:       p.id,
+    name:             p.name,
+    category:         p.category,
+    available_qty:    p.available_qty,
+    unit_price:       unitPrice,
+    quantity:         qty,
+    discount_percent: 0,
+    discount_amount:  0,
+    line_total:       unitPrice * qty,
+  });
+  renderTable();
+  renderSummary();
+  updateGridStates();
+  scheduleProductionFetch();
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#items-tbody tr');
+    if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 40);
+}
+
+document.getElementById('qty-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const ps = document.getElementById('qm-price-section');
+    if (!ps.classList.contains('hidden')) {
+      const pi = document.getElementById('price-input');
+      pi.focus(); pi.select();
+    } else {
+      confirmAddProduct();
+    }
+  }
+  if (e.key === 'Escape') { e.preventDefault(); closeQtyPrompt(); }
+});
+document.getElementById('price-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter')  { e.preventDefault(); confirmAddProduct(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeQtyPrompt(); }
+});
+document.getElementById('qty-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeQtyPrompt();
+});
+
+// ── Update card visual states ──────────────────────────────────────────────
+function updateGridStates() {
+  const addedIds = new Set(_items.map(i => i.product_id));
+  document.querySelectorAll('.product-card').forEach(card => {
+    const pid = parseInt(card.dataset.productId);
+    if (addedIds.has(pid)) {
+      card.className = 'product-card text-left p-3 rounded-lg border-2 border-primary-500 bg-primary-50 cursor-default w-full';
+      if (!card.querySelector('.added-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'added-badge block text-xs text-primary-600 font-semibold mt-1.5';
+        badge.textContent = '✓ Added';
+        card.appendChild(badge);
+      }
+    } else {
+      card.className = 'product-card text-left p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all cursor-pointer w-full';
+      const badge = card.querySelector('.added-badge');
+      if (badge) badge.remove();
+    }
+  });
+}
+
+// ── Remove item ────────────────────────────────────────────────────────────
+function removeItem(idx) {
+  _items.splice(idx, 1);
+  renderTable();
+  renderSummary();
+  updateGridStates();
+  scheduleProductionFetch();
+}
+
+// ── Field update ───────────────────────────────────────────────────────────
+function updateField(idx, field, val) {
+  const v = field === 'quantity' ? Math.max(1, parseInt(val) || 1) : (parseFloat(val) || 0);
+  _items[idx][field] = v;
+  const item = _items[idx];
+  item.discount_amount = (item.quantity * item.unit_price * item.discount_percent / 100);
+  item.line_total      = Math.max(0, item.quantity * item.unit_price - item.discount_amount);
+  renderTable();
+  renderSummary();
+  if (field === 'quantity') scheduleProductionFetch();
+}
+
+// ── Qty stepper ────────────────────────────────────────────────────────────
+function stepQty(idx, delta) {
+  updateField(idx, 'quantity', Math.max(1, (_items[idx].quantity || 1) + delta));
+}
+
+// ── Render table ───────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('items-tbody');
+  const wrap  = document.getElementById('items-wrap');
+  const noMsg = document.getElementById('no-items-msg');
+
+  if (_items.length === 0) {
+    wrap.classList.add('hidden');
+    noMsg.classList.remove('hidden');
+    tbody.innerHTML = '';
+    return;
+  }
+  wrap.classList.remove('hidden');
+  noMsg.classList.add('hidden');
+
+  tbody.innerHTML = _items.map((item, idx) => `
+    <tr>
+      <td class="px-3 py-2.5">
+        <p class="font-medium text-gray-900 text-sm">${item.name}</p>
+        <p class="text-xs text-gray-400">${item.category}</p>
+      </td>
+      <td class="px-3 py-2.5 text-right text-xs text-gray-400 whitespace-nowrap">${item.available_qty}</td>
+      <td class="px-3 py-2.5">
+        <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+          <button type="button" onclick="stepQty(${idx},-1)"
+                  class="w-7 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition border-r border-gray-300">−</button>
+          <input type="number" value="${item.quantity}" min="1" step="1"
+                 onchange="updateField(${idx},'quantity',this.value)"
+                 class="w-10 h-8 text-sm text-center border-0 outline-none">
+          <button type="button" onclick="stepQty(${idx},1)"
+                  class="w-7 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition border-l border-gray-300">+</button>
+        </div>
+      </td>
+      <td class="px-3 py-2.5 text-right">
+        <input type="number" value="${item.unit_price}" min="0" step="0.01"
+               onchange="updateField(${idx},'unit_price',this.value)"
+               class="w-28 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-primary-500 outline-none">
+      </td>
+      <td class="px-3 py-2.5 text-right">
+        <input type="number" value="${item.discount_percent}" min="0" max="100" step="0.01"
+               onchange="updateField(${idx},'discount_percent',this.value)"
+               class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-primary-500 outline-none">
+      </td>
+      <td class="px-3 py-2.5 text-right text-sm text-red-600">Rs. ${fmt(item.discount_amount)}</td>
+      <td class="px-3 py-2.5 text-right text-sm font-semibold text-gray-900">Rs. ${fmt(item.line_total)}</td>
+      <td class="px-3 py-2.5 text-right">
+        <button type="button" onclick="removeItem(${idx})" class="p-1 text-gray-400 hover:text-red-600 rounded transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── Render summary ─────────────────────────────────────────────────────────
+function renderSummary() {
+  let subtotal = 0, totalDisc = 0;
+  _items.forEach(i => {
+    subtotal  += i.quantity * i.unit_price;
+    totalDisc += i.discount_amount;
+  });
+  const total = Math.max(0, subtotal - totalDisc);
+  document.getElementById('s-subtotal').textContent = 'Rs. ' + fmt(subtotal);
+  document.getElementById('s-discount').textContent = '− Rs. ' + fmt(totalDisc);
+  document.getElementById('s-total').textContent    = 'Rs. ' + fmt(total);
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+function submitBooking() {
+  if (!document.getElementById('f-customer-id').value) {
+    alert('Please select a customer.');
+    return;
+  }
+  if (_items.length === 0) {
+    alert('Please add at least one product to the booking.');
+    return;
+  }
+
+  document.getElementById('f-items-json').value = JSON.stringify(
+    _items.map(i => ({
+      product_id:       i.product_id,
+      quantity:         i.quantity,
+      unit_price:       i.unit_price,
+      discount_percent: i.discount_percent,
+    }))
+  );
+
+  document.getElementById('booking-form').submit();
+}
+
+// ── Product grid search ────────────────────────────────────────────────────
+function filterProductGrid(q) {
+  const term = q.trim().toLowerCase();
+  document.getElementById('product-search-clear').classList.toggle('hidden', !term);
+  let visible = 0;
+  document.querySelectorAll('.product-card').forEach(card => {
+    const match = !term || (card.dataset.search || '').includes(term);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('product-no-results').classList.toggle('hidden', visible > 0);
+}
+
+function clearProductSearch() {
+  const el = document.getElementById('product-search-input');
+  if (el) { el.value = ''; el.focus(); }
+  filterProductGrid('');
+}
+
+// ── Production needs ───────────────────────────────────────────────────────
+let _prodTimer = null;
+
+function scheduleProductionFetch() {
+  clearTimeout(_prodTimer);
+  _prodTimer = setTimeout(fetchProductionNeeds, 400);
+}
+
+function fetchProductionNeeds() {
+  if (_items.length === 0) {
+    document.getElementById('production-panel').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('production-panel').classList.remove('hidden');
+  document.getElementById('prod-loading').classList.remove('hidden');
+
+  const payload = {
+    items: _items.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
+  };
+
+  fetch('{% url "booking:api_production_needs" %}', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+    body:    JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('prod-loading').classList.add('hidden');
+    const tbody = document.getElementById('prod-tbody');
+    tbody.innerHTML = data.items.map(row => {
+      const needed   = row.production_needed;
+      const needCell = needed > 0
+        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+             ${fmtQ(needed)} units
+           </span>`
+        : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+             Sufficient
+           </span>`;
+      return `<tr class="${needed > 0 ? 'bg-red-50' : ''}">
+        <td class="px-4 py-2.5 font-medium text-gray-900">${row.product_name}</td>
+        <td class="px-4 py-2.5 text-right text-gray-600">${fmtQ(row.available_qty)}</td>
+        <td class="px-4 py-2.5 text-right text-gray-600">${fmtQ(row.pending_other_qty)}</td>
+        <td class="px-4 py-2.5 text-right font-semibold text-primary-700">${fmtQ(row.current_qty)}</td>
+        <td class="px-4 py-2.5 text-right font-semibold ${row.total_ordered > row.available_qty ? 'text-red-600' : 'text-gray-900'}">${fmtQ(row.total_ordered)}</td>
+        <td class="px-4 py-2.5 text-right">${needCell}</td>
+      </tr>`;
+    }).join('');
+  })
+  .catch(() => { document.getElementById('prod-loading').classList.add('hidden'); });
+}
+
+function fmtQ(n) {
+  return parseFloat(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return parseFloat(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
+{% endblock %}

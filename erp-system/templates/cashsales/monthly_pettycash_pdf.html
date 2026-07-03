@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Petty Cash Report — {{ month_label }}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; margin: 20px; }
+
+  h1 { font-size: 16pt; margin: 0 0 4px 0; }
+  p  { margin: 2px 0; font-size: 10pt; color: #444; }
+
+  /* ── Summary strip ── */
+  .summary-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+  .summary-table td {
+    width: 25%;
+    border: 1px solid #d1d5db;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  .summary-label { font-size: 9pt; color: #666; font-weight: bold; text-transform: uppercase; }
+  .summary-value { font-size: 13pt; font-weight: bold; margin-top: 3px; }
+  .val-green { color: #15803d; }
+  .val-red   { color: #be123c; }
+  .val-blue  { color: #1d4ed8; }
+  .val-dark  { color: #111; }
+
+  /* ── Ledger table ── */
+  .ledger-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .ledger-table th {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    padding: 6px 8px;
+    font-size: 9pt;
+    font-weight: bold;
+    text-align: left;
+    text-transform: uppercase;
+    color: #555;
+  }
+  .ledger-table th.right { text-align: right; }
+  .ledger-table td {
+    border: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    font-size: 10pt;
+    vertical-align: top;
+  }
+  .ledger-table td.right { text-align: right; }
+
+  .row-opening  { background-color: #eff6ff; }
+  .row-closing  { background-color: #f0fdf4; }
+  .row-cash-in  { background-color: #f0fdf4; }
+  .row-cash-out { background-color: #fff1f2; }
+
+  .label-bold { font-weight: bold; font-style: italic; color: #374151; }
+  .text-green { color: #15803d; font-weight: bold; }
+  .text-red   { color: #be123c; font-weight: bold; }
+  .text-muted { color: #9ca3af; }
+  .text-bold  { font-weight: bold; }
+
+  .empty-box {
+    border: 1px dashed #9ca3af;
+    padding: 16px;
+    color: #6b7280;
+    text-align: center;
+    font-size: 10pt;
+    margin-top: 10px;
+  }
+
+  {% if printable %}
+  .print-btn {
+    display: inline-block; margin-bottom: 14px;
+    padding: 8px 18px; background-color: #2563eb; color: #fff;
+    border: none; border-radius: 6px; font-size: 11pt; cursor: pointer;
+  }
+  @media print { .print-btn { display: none; } }
+  {% endif %}
+</style>
+</head>
+<body>
+
+{% if printable %}
+<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+{% endif %}
+
+<h1>Monthly Petty Cash Report</h1>
+<p><strong>Period:</strong> {{ month_label }}</p>
+<p><strong>Generated:</strong> {{ generated_at|date:"d M Y, h:i A" }}</p>
+<p><strong>Entries this month:</strong> {{ ledger_rows|length }}</p>
+
+<!-- Summary strip -->
+<table class="summary-table">
+  <tr>
+    <td>
+      <div class="summary-label">Opening Balance</div>
+      <div class="summary-value val-dark">Rs. {{ opening_balance|floatformat:2 }}</div>
+    </td>
+    <td>
+      <div class="summary-label">Reimbursements (+)</div>
+      <div class="summary-value val-green">Rs. {{ monthly_in|floatformat:2 }}</div>
+    </td>
+    <td>
+      <div class="summary-label">Payments (−)</div>
+      <div class="summary-value val-red">Rs. {{ monthly_out|floatformat:2 }}</div>
+    </td>
+    <td>
+      <div class="summary-label">Closing Balance</div>
+      <div class="summary-value {% if closing_balance >= 0 %}val-blue{% else %}val-red{% endif %}">
+        Rs. {{ closing_balance|floatformat:2 }}
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- Ledger -->
+{% if ledger_rows %}
+<table class="ledger-table">
+  <thead>
+    <tr>
+      <th style="width:11%;">Date</th>
+      <th style="width:30%;">Purpose</th>
+      <th style="width:14%;">Reference</th>
+      <th class="right" style="width:15%;">Reimb. (In)</th>
+      <th class="right" style="width:15%;">Payment (Out)</th>
+      <th class="right" style="width:15%;">Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Opening balance row -->
+    <tr class="row-opening">
+      <td class="text-muted">—</td>
+      <td colspan="4"><span class="label-bold">Opening Balance — brought forward</span></td>
+      <td class="right text-bold">Rs. {{ opening_balance|floatformat:2 }}</td>
+    </tr>
+
+    {% for row in ledger_rows %}
+    <tr class="{% if row.entry.sale_type == 'cash_in' %}row-cash-in{% else %}row-cash-out{% endif %}">
+      <td>{{ row.entry.date|date:"d M Y" }}</td>
+      <td>
+        {{ row.entry.purpose }}
+        {% if row.entry.notes %}<br><span class="text-muted" style="font-size:9pt;">{{ row.entry.notes }}</span>{% endif %}
+      </td>
+      <td>{{ row.entry.reference_number|default:"—" }}</td>
+      <td class="right">
+        {% if row.entry.sale_type == 'cash_in' %}
+          <span class="text-green">+ Rs. {{ row.entry.amount|floatformat:2 }}</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+      <td class="right">
+        {% if row.entry.sale_type == 'cash_out' %}
+          <span class="text-red">− Rs. {{ row.entry.amount|floatformat:2 }}</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+      <td class="right text-bold">Rs. {{ row.running_balance|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+
+    <!-- Closing balance row -->
+    <tr class="row-closing">
+      <td class="text-muted">—</td>
+      <td colspan="4"><span class="label-bold">Closing Balance — carried forward</span></td>
+      <td class="right text-bold {% if closing_balance >= 0 %}text-green{% else %}text-red{% endif %}">
+        Rs. {{ closing_balance|floatformat:2 }}
+      </td>
+    </tr>
+  </tbody>
+</table>
+{% else %}
+<div class="empty-box">No petty cash entries found for {{ month_label }}.</div>
+{% endif %}
+
+</body>
+</html>

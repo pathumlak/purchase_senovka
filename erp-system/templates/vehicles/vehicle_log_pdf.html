@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Vehicle Log — {{ month_name }} {{ year }}</title>
+  <style>
+    @page { size: A4 landscape; margin: 1.8cm 1.5cm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #1f2937; }
+
+    .header { margin-bottom: 14px; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; }
+    .header h1 { font-size: 17px; font-weight: 700; color: #1d4ed8; }
+    .header-sub { display: flex; justify-content: space-between; margin-top: 4px; }
+    .header-sub span { font-size: 9px; color: #6b7280; }
+
+    .stats { display: flex; gap: 16px; margin-bottom: 14px; }
+    .stat-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px;
+                padding: 6px 14px; text-align: center; }
+    .stat-box .label { font-size: 8px; color: #0369a1; text-transform: uppercase;
+                       letter-spacing: .06em; }
+    .stat-box .value { font-size: 14px; font-weight: 700; color: #0c4a6e; margin-top: 1px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+    thead tr { background: #1d4ed8; color: #fff; }
+    thead th { padding: 7px 8px; text-align: left; font-weight: 600;
+               font-size: 8.5px; text-transform: uppercase; letter-spacing: .07em; }
+    thead th.right { text-align: right; }
+
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+    tbody td.right { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody td.km { text-align: right; font-weight: 700; color: #15803d; }
+
+    tfoot tr { background: #f0fdf4; border-top: 2px solid #16a34a; }
+    tfoot td { padding: 7px 8px; font-weight: 700; font-size: 10px; }
+    tfoot td.km { text-align: right; color: #15803d; font-size: 11px; }
+    tfoot td.label { text-align: right; color: #374151; }
+
+    .footer { margin-top: 14px; font-size: 8px; color: #9ca3af;
+              border-top: 1px solid #e5e7eb; padding-top: 6px;
+              display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Vehicle Maintenance Log</h1>
+    <div class="header-sub">
+      <span>Period: <strong>{{ month_name }} {{ year }}</strong></span>
+      <span>Generated: {{ generated_at|date:"d M Y, h:i A" }}</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="label">Total Trips</div>
+      <div class="value">{{ total_trips }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Total KM</div>
+      <div class="value">{{ total_km|floatformat:1 }} km</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28px">#</th>
+        <th style="width:72px">Date</th>
+        <th style="width:90px">Driver</th>
+        <th>From</th>
+        <th>To</th>
+        <th class="right" style="width:58px">Start KM</th>
+        <th class="right" style="width:58px">End KM</th>
+        <th class="right" style="width:58px">Total KM</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ log.date|date:"d M Y" }}</td>
+        <td>{{ log.driver_name }}</td>
+        <td>{{ log.from_location }}</td>
+        <td>{{ log.to_location }}</td>
+        <td class="right">{{ log.start_km|floatformat:1 }}</td>
+        <td class="right">{{ log.end_km|floatformat:1 }}</td>
+        <td class="km">{{ log.total_km|floatformat:1 }}</td>
+        <td>{{ log.purpose }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" style="text-align:center;padding:20px;color:#9ca3af;font-style:italic;">
+          No trips recorded for {{ month_name }} {{ year }}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% if logs %}
+    <tfoot>
+      <tr>
+        <td colspan="7" class="label">Total for {{ month_name }} {{ year }}</td>
+        <td class="km">{{ total_km|floatformat:1 }} km</td>
+        <td></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+
+  <div class="footer">
+    <span>SENOVKA ERP — Vehicle Maintenance</span>
+    <span>{{ month_name }} {{ year }} Report</span>
+  </div>
+
+</body>
+</html>

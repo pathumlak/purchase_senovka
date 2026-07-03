@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; padding: 28px; }
+
+  /* Header */
+  .header { border-bottom: 3px solid #1d4ed8; padding-bottom: 14px; margin-bottom: 20px; }
+  .company-name { font-size: 20px; font-weight: bold; color: #1d4ed8; }
+  .doc-title { font-size: 13px; font-weight: bold; color: #374151; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; }
+
+  /* Meta grid */
+  .meta-grid { display: table; width: 100%; margin-bottom: 20px; }
+  .meta-left, .meta-right { display: table-cell; vertical-align: top; width: 50%; }
+  .meta-section-title { font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; font-weight: bold; margin-bottom: 5px; }
+  .meta-value { font-size: 11px; font-weight: bold; color: #111827; }
+  .meta-sub { font-size: 9px; color: #6b7280; margin-top: 2px; line-height: 1.4; }
+
+  .meta-right table { width: 100%; }
+  .meta-right td { font-size: 9.5px; padding: 2px 0; }
+  .meta-right td:first-child { color: #6b7280; width: 130px; }
+  .meta-right td:last-child { font-weight: bold; text-align: right; }
+
+  /* Items table */
+  table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  table.items thead tr { background: #1d4ed8; color: #fff; }
+  table.items th { padding: 6px 8px; text-align: left; font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.items th.r, table.items td.r { text-align: right; }
+  table.items td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; font-size: 9px; }
+  table.items tr:nth-child(even) td { background: #f9fafb; }
+  table.items tfoot td { font-weight: bold; font-size: 9.5px; }
+  table.items tfoot tr.subtotal td { border-top: 1px solid #d1d5db; padding-top: 8px; }
+  table.items tfoot tr.grand td { border-top: 2px solid #1d4ed8; background: #eff6ff; color: #1d4ed8; font-size: 10px; }
+
+  /* Footer */
+  .footer { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 8px; color: #9ca3af; }
+  .footer strong { color: #374151; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-name">SENOVKA ERP</div>
+  <div class="doc-title">Quotation</div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-left">
+    <div class="meta-section-title">Bill To</div>
+    <div class="meta-value">{{ booking.customer.name }}</div>
+    {% if booking.customer.address %}
+    <div class="meta-sub">{{ booking.customer.address }}</div>
+    {% endif %}
+  </div>
+  <div class="meta-right">
+    <table>
+      <tr>
+        <td>Quotation No.:</td>
+        <td>{{ booking.booking_number }}</td>
+      </tr>
+      <tr>
+        <td>Booking Date:</td>
+        <td>{{ booking.booking_date|date:"d M Y" }}</td>
+      </tr>
+      <tr>
+        <td>Order Sending Date:</td>
+        <td>{% if booking.order_sending_date %}{{ booking.order_sending_date|date:"d M Y" }}{% else %}—{% endif %}</td>
+      </tr>
+      <tr>
+        <td>Generated:</td>
+        <td>{{ generated_at|date:"d M Y H:i" }}</td>
+      </tr>
+      <tr>
+        <td>Status:</td>
+        <td>{{ booking.get_status_display }}</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<table class="items">
+  <thead>
+    <tr>
+      <th style="width:28px;">#</th>
+      <th>Product</th>
+      <th>Category</th>
+      <th class="r" style="width:55px;">Qty</th>
+      <th class="r" style="width:80px;">Unit Price</th>
+      <th class="r" style="width:45px;">Disc%</th>
+      <th class="r" style="width:75px;">Line Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in booking.items.all %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ item.product.name }}{% if item.product.size %} <span style="font-size:8px;color:#6b7280;">({{ item.product.size }})</span>{% endif %}</td>
+      <td style="color:#6b7280;">{{ item.product.category.name }}</td>
+      <td class="r">{{ item.quantity|floatformat:3 }}</td>
+      <td class="r">Rs. {{ item.unit_price|floatformat:2 }}</td>
+      <td class="r">{{ item.discount_percent|floatformat:2 }}%</td>
+      <td class="r"><strong>Rs. {{ item.line_total|floatformat:2 }}</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="subtotal">
+      <td colspan="5" class="r">Subtotal</td>
+      <td colspan="2" class="r">Rs. {{ booking.subtotal|floatformat:2 }}</td>
+    </tr>
+    {% if booking.discount_amount > 0 %}
+    <tr>
+      <td colspan="5" class="r" style="color:#dc2626;">Total Discount</td>
+      <td colspan="2" class="r" style="color:#dc2626;">− Rs. {{ booking.discount_amount|floatformat:2 }}</td>
+    </tr>
+    {% endif %}
+    <tr class="grand">
+      <td colspan="5" class="r">Grand Total</td>
+      <td colspan="2" class="r">Rs. {{ booking.total_amount|floatformat:2 }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+{% if booking.notes %}
+<div style="margin-bottom:16px;">
+  <div class="meta-section-title">Notes</div>
+  <div style="font-size:9px;color:#374151;margin-top:4px;">{{ booking.notes }}</div>
+</div>
+{% endif %}
+
+<div class="footer">
+  <strong>SENOVKA ERP</strong> &bull; This is a quotation only. Prices are valid as indicated. No goods have been dispatched. &bull; {{ generated_at|date:"d M Y" }}
+</div>
+
+</body>
+</html>

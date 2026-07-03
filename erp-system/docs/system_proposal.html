@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP System — Project Proposal &amp; System Guide | Senovka Plastics</title>
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── Base ── */
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    color: #1a1a2e;
+    background: #f0f2f5;
+    line-height: 1.6;
+  }
+
+  /* ── Page shell ── */
+  .page {
+    width: 210mm;
+    margin: 16px auto;
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    box-shadow: 0 2px 12px rgba(0,0,0,.10);
+  }
+
+  /* ── Cover page ── */
+  .cover {
+    width: 210mm;
+    min-height: 297mm;
+    background: linear-gradient(155deg, #0f172a 0%, #1e3a5f 55%, #0e7490 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.03);
+  }
+  .cover-top {
+    padding: 42pt 48pt 0;
+  }
+  .cover-logo-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 8pt 16pt;
+    border-radius: 6px;
+    margin-bottom: 60pt;
+  }
+  .cover-logo-box span {
+    color: #fff;
+    font-size: 11pt;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(14,116,144,.7);
+    border: 1px solid rgba(56,189,248,.4);
+    color: #7dd3fc;
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 2.5pt;
+    text-transform: uppercase;
+    padding: 4pt 12pt;
+    border-radius: 4px;
+    margin-bottom: 16pt;
+  }
+  .cover-title {
+    color: #fff;
+    font-size: 34pt;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    margin-bottom: 8pt;
+  }
+  .cover-title span {
+    color: #7dd3fc;
+  }
+  .cover-subtitle {
+    color: rgba(255,255,255,.65);
+    font-size: 13pt;
+    font-weight: 400;
+    margin-bottom: 32pt;
+  }
+  .cover-desc {
+    color: rgba(255,255,255,.75);
+    font-size: 10.5pt;
+    line-height: 1.7;
+    max-width: 380pt;
+    border-left: 3px solid #0ea5e9;
+    padding-left: 14pt;
+  }
+  .cover-bottom {
+    padding: 24pt 48pt;
+    border-top: 1px solid rgba(255,255,255,.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .cover-company h2 {
+    color: #fff;
+    font-size: 14pt;
+    font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  .cover-company p {
+    color: rgba(255,255,255,.55);
+    font-size: 9pt;
+    line-height: 1.7;
+  }
+  .cover-meta {
+    text-align: right;
+  }
+  .cover-meta p {
+    color: rgba(255,255,255,.5);
+    font-size: 9pt;
+    line-height: 1.8;
+  }
+  .cover-meta .version {
+    display: inline-block;
+    background: rgba(14,116,144,.5);
+    color: #38bdf8;
+    font-size: 8pt;
+    font-weight: 700;
+    padding: 2pt 8pt;
+    border-radius: 3px;
+    margin-bottom: 6pt;
+  }
+
+  /* ── Inner pages ── */
+  .inner {
+    padding: 18mm 20mm;
+    min-height: 297mm;
+    position: relative;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    margin-bottom: 18pt;
+    padding-bottom: 10pt;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .section-header .section-num {
+    display: inline-block;
+    background: #0e7490;
+    color: #fff;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    padding: 3pt 9pt;
+    border-radius: 3px;
+    margin-bottom: 6pt;
+  }
+  .section-header h2 {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -.3px;
+  }
+  .section-header p {
+    color: #64748b;
+    font-size: 10.5pt;
+    margin-top: 4pt;
+  }
+
+  /* ── Module card ── */
+  .module-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 18pt;
+  }
+  .module-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12pt;
+    padding: 12pt 16pt;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .module-icon {
+    width: 36pt;
+    height: 36pt;
+    border-radius: 8pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16pt;
+    flex-shrink: 0;
+  }
+  .module-card-head h3 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .module-card-head p {
+    font-size: 9pt;
+    color: #64748b;
+    margin-top: 1pt;
+  }
+  .module-card-body {
+    padding: 12pt 16pt;
+    background: #fafafa;
+  }
+
+  /* ── Feature list ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7pt 16pt;
+  }
+  .feat-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7pt;
+    font-size: 9.5pt;
+    color: #334155;
+    line-height: 1.5;
+  }
+  .feat-dot {
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4pt;
+  }
+
+  /* ── Table of contents ── */
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 8pt;
+    padding: 7pt 0;
+    border-bottom: 1px dotted #e2e8f0;
+    font-size: 10.5pt;
+  }
+  .toc-item:last-child { border-bottom: none; }
+  .toc-num {
+    font-weight: 700;
+    color: #0e7490;
+    min-width: 22pt;
+  }
+  .toc-title { flex: 1; color: #1e293b; }
+  .toc-dots { flex: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 6pt; }
+  .toc-page { color: #64748b; font-size: 9.5pt; }
+
+  /* ── Highlight box ── */
+  .highlight-box {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 1px solid #bae6fd;
+    border-left: 4px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 12pt 16pt;
+    margin: 14pt 0;
+  }
+  .highlight-box h4 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #0c4a6e;
+    margin-bottom: 6pt;
+  }
+  .highlight-box p, .highlight-box li {
+    font-size: 9.5pt;
+    color: #1e4e7a;
+    line-height: 1.6;
+  }
+  .highlight-box ul { padding-left: 14pt; }
+  .highlight-box li { margin-bottom: 3pt; }
+
+  /* ── Info box ── */
+  .info-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12pt 16pt;
+    margin: 12pt 0;
+    background: #fff;
+  }
+  .info-box h4 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8pt;
+    padding-bottom: 6pt;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  /* ── Flow diagram ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 14pt 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 7px;
+    padding: 8pt 12pt;
+    text-align: center;
+    min-width: 70pt;
+    flex-shrink: 0;
+  }
+  .flow-step .fs-num {
+    font-size: 7pt;
+    font-weight: 700;
+    color: #0e7490;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+  }
+  .flow-step .fs-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 2pt;
+  }
+  .flow-arrow {
+    font-size: 14pt;
+    color: #94a3b8;
+    padding: 0 6pt;
+    flex-shrink: 0;
+  }
+
+  /* ── Role card ── */
+  .role-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+  }
+  .role-card-head {
+    padding: 10pt 14pt;
+    font-size: 11pt;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .role-card-body {
+    padding: 10pt 14pt;
+    font-size: 9.5pt;
+    color: #334155;
+  }
+  .role-card-body li {
+    margin-bottom: 4pt;
+    line-height: 1.5;
+  }
+  .roles-row {
+    display: flex;
+    gap: 14pt;
+    margin: 12pt 0;
+  }
+
+  /* ── Stat grid ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10pt;
+    margin: 16pt 0;
+  }
+  .stat-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12pt 10pt;
+    text-align: center;
+    background: #fafafa;
+  }
+  .stat-card .stat-value {
+    font-size: 20pt;
+    font-weight: 800;
+    color: #0e7490;
+    line-height: 1;
+  }
+  .stat-card .stat-label {
+    font-size: 8.5pt;
+    color: #64748b;
+    margin-top: 4pt;
+    line-height: 1.4;
+  }
+
+  /* ── Page header/footer (inner) ── */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10pt;
+    margin-bottom: 18pt;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 8.5pt;
+    color: #94a3b8;
+  }
+  .page-header strong { color: #0e7490; font-weight: 600; }
+  .page-footer {
+    position: absolute;
+    bottom: 14mm;
+    left: 20mm;
+    right: 20mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8pt;
+    color: #94a3b8;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 6pt;
+  }
+
+  /* ── Utility ── */
+  h3.sub { font-size: 12pt; font-weight: 700; color: #1e293b; margin: 16pt 0 8pt; }
+  p.body { font-size: 10pt; color: #334155; line-height: 1.7; margin-bottom: 10pt; }
+  .chip {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 600;
+    padding: 2pt 7pt;
+    border-radius: 3px;
+    margin: 2pt 2pt 2pt 0;
+  }
+  .chip-blue   { background:#dbeafe; color:#1d4ed8; }
+  .chip-green  { background:#dcfce7; color:#166534; }
+  .chip-orange { background:#ffedd5; color:#c2410c; }
+  .chip-purple { background:#f3e8ff; color:#7e22ce; }
+  .chip-teal   { background:#ccfbf1; color:#0f766e; }
+  .chip-red    { background:#fee2e2; color:#b91c1c; }
+  .chip-gray   { background:#f1f5f9; color:#475569; }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 10pt 0;
+  }
+  table.data-table th {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6pt 9pt;
+    text-align: left;
+    font-weight: 700;
+    color: #475569;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: .5pt;
+  }
+  table.data-table td {
+    border: 1px solid #e2e8f0;
+    padding: 6pt 9pt;
+    color: #334155;
+    vertical-align: top;
+  }
+  table.data-table tr:nth-child(even) td { background: #fafafa; }
+
+  .page-break { page-break-after: always; break-after: page; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; border: none; box-shadow: none; }
+    .cover { min-height: 297mm; }
+    .inner { min-height: 297mm; }
+    @page { size: A4; margin: 0; }
+  }
+
+  /* ── Screen only controls ── */
+  .no-print {
+    width: 210mm;
+    margin: 12px auto 0;
+    padding-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    font-family: Arial, sans-serif;
+  }
+  .no-print button, .no-print a {
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid #555;
+    background: #fff;
+    color: #000;
+  }
+  .no-print button { background: #0e7490; color: #fff; border-color: #0e7490; }
+  @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <a href="javascript:history.back()">← Back</a>
+</div>
+
+<!-- ═══════════════════════════════════ COVER ═══════════════════════════════ -->
+<div class="page">
+<div class="cover">
+  <div class="cover-top">
+    <div class="cover-logo-box">
+      <svg width="18" height="18" fill="none" stroke="#7dd3fc" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+      <span>Senovka Plastics — ERP System</span>
+    </div>
+
+    <div class="cover-badge">Project Proposal &amp; System Guide</div>
+    <div class="cover-title">Enterprise Resource<br>Planning <span>System</span></div>
+    <div class="cover-subtitle">Complete Business Management Platform</div>
+    <div class="cover-desc">
+      A purpose-built, integrated ERP platform designed to manage the full business cycle of Senovka Plastics &amp; Hardware — from customer quotations and order bookings through production tracking, billing, payments, and financial reporting.
+    </div>
+  </div>
+
+  <div class="cover-bottom">
+    <div class="cover-company">
+      <h2>Senovka Plastics &amp; Hardware</h2>
+      <p>senovkaplasticsandhardware@gmail.com<br>0720 679 740<br>Confidential Business Document</p>
+    </div>
+    <div class="cover-meta">
+      <div class="version">Version 1.0</div>
+      <p>Prepared: 2026<br>Classification: Confidential<br>Document Type: System Proposal</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════ TABLE OF CONTENTS ═══════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Table of Contents</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Contents</div>
+    <h2>Table of Contents</h2>
+    <p>Overview of all sections covered in this document</p>
+  </div>
+
+  <div style="margin-top: 8pt;">
+    <div class="toc-item"><span class="toc-num">1</span><span class="toc-title">Executive Summary</span><span class="toc-dots"></span><span class="toc-page">3</span></div>
+    <div class="toc-item"><span class="toc-num">2</span><span class="toc-title">System Architecture &amp; Modules Overview</span><span class="toc-dots"></span><span class="toc-page">4</span></div>
+    <div class="toc-item"><span class="toc-num">3</span><span class="toc-title">Customer Management</span><span class="toc-dots"></span><span class="toc-page">5</span></div>
+    <div class="toc-item"><span class="toc-num">4</span><span class="toc-title">Billing &amp; Payments</span><span class="toc-dots"></span><span class="toc-page">6</span></div>
+    <div class="toc-item"><span class="toc-num">5</span><span class="toc-title">Order Bookings &amp; Quotations</span><span class="toc-dots"></span><span class="toc-page">8</span></div>
+    <div class="toc-item"><span class="toc-num">6</span><span class="toc-title">Production &amp; Inventory Management</span><span class="toc-dots"></span><span class="toc-page">9</span></div>
+    <div class="toc-item"><span class="toc-num">7</span><span class="toc-title">Material Purchasing</span><span class="toc-dots"></span><span class="toc-page">10</span></div>
+    <div class="toc-item"><span class="toc-num">8</span><span class="toc-title">Supplier Management</span><span class="toc-dots"></span><span class="toc-page">11</span></div>
+    <div class="toc-item"><span class="toc-num">9</span><span class="toc-title">Petty Cash Ledger</span><span class="toc-dots"></span><span class="toc-page">12</span></div>
+    <div class="toc-item"><span class="toc-num">10</span><span class="toc-title">Task Management</span><span class="toc-dots"></span><span class="toc-page">13</span></div>
+    <div class="toc-item"><span class="toc-num">11</span><span class="toc-title">Dashboard &amp; Alerts</span><span class="toc-dots"></span><span class="toc-page">14</span></div>
+    <div class="toc-item"><span class="toc-num">12</span><span class="toc-title">User Roles &amp; Access Control</span><span class="toc-dots"></span><span class="toc-page">15</span></div>
+    <div class="toc-item"><span class="toc-num">13</span><span class="toc-title">Reporting &amp; Exports</span><span class="toc-dots"></span><span class="toc-page">16</span></div>
+    <div class="toc-item"><span class="toc-num">14</span><span class="toc-title">Key Business Benefits</span><span class="toc-dots"></span><span class="toc-page">17</span></div>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 32pt;">
+    <div class="stat-card"><div class="stat-value">9</div><div class="stat-label">Integrated Modules</div></div>
+    <div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Payment Methods</div></div>
+    <div class="stat-card"><div class="stat-value">100%</div><div class="stat-label">Web-Based Access</div></div>
+    <div class="stat-card"><div class="stat-value">PDF+XLS</div><div class="stat-label">Export Formats</div></div>
+  </div>
+
+  <div class="highlight-box" style="margin-top: 18pt;">
+    <h4>About This Document</h4>
+    <p>This document describes the complete feature set of the custom ERP system built for Senovka Plastics &amp; Hardware. It covers every module, workflow, and business rule implemented in the system. This guide is intended to help stakeholders understand the scope of the platform, how each area of the business is managed, and the value delivered by the system.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 2</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ EXECUTIVE SUMMARY ══════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 1 — Executive Summary</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 01</div>
+    <h2>Executive Summary</h2>
+    <p>What the system is, who it serves, and why it was built</p>
+  </div>
+
+  <p class="body">The Senovka Plastics ERP is a fully custom-built, web-based Enterprise Resource Planning system designed specifically for the operational needs of Senovka Plastics &amp; Hardware. It replaces manual record-keeping and disconnected spreadsheets with a single integrated platform that connects every area of the business — customers, orders, production, billing, purchasing, and finance.</p>
+
+  <p class="body">The system is accessible from any device with a web browser, requires no software installation, and is secured with role-based user access so that each team member sees and can do only what their role permits.</p>
+
+  <h3 class="sub">What Problems This System Solves</h3>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Business Problem</th>
+        <th>How the ERP Solves It</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Manual billing on paper leads to errors and lost records</td>
+        <td>Auto-numbered digital bills with full payment tracking and print-ready invoices</td>
+      </tr>
+      <tr>
+        <td>No visibility into what customers owe or have in credit</td>
+        <td>Live customer balance system — automatically updates on every transaction</td>
+      </tr>
+      <tr>
+        <td>Difficulty tracking cheque payments and bounces</td>
+        <td>Full cheque lifecycle management: received → cleared / bounced, with balance reversal</td>
+      </tr>
+      <tr>
+        <td>No way to know if stock is enough to fulfil pending orders</td>
+        <td>Live production needs calculator — shows exactly how much to produce per product</td>
+      </tr>
+      <tr>
+        <td>Material purchase weights cannot be verified against invoices</td>
+        <td>Scale weight verification with automatic discrepancy calculation per purchase</td>
+      </tr>
+      <tr>
+        <td>Petty cash tracking is done in a notebook with no running balance</td>
+        <td>Digital monthly ledger with opening balance, running totals, and PDF/Excel export</td>
+      </tr>
+      <tr>
+        <td>Supplier invoices and received goods are not reconciled</td>
+        <td>Supply receipt module that updates product stock and optionally applies credit to the supplier's customer account</td>
+      </tr>
+      <tr>
+        <td>No limit on how much credit a customer can run up</td>
+        <td>Per-customer maximum outstanding limit enforced at bill creation, set by SuperAdmin only</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box">
+    <h4>Technology Platform</h4>
+    <p>Built on Django (Python) with a responsive Tailwind CSS frontend. The system runs on a Linux server and is accessed via any modern web browser. Reports can be exported to Excel (.xlsx) or PDF at the click of a button in every module.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 3</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ MODULES OVERVIEW ════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 2 — Modules Overview</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 02</div>
+    <h2>System Architecture &amp; Modules</h2>
+    <p>The nine integrated modules that make up the complete system</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; margin-bottom: 16pt;">
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#dbeafe;">👥</div>
+        <div><h3>Customer Management</h3><p>Profiles, balances, custom pricing</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Customer profiles &amp; contact info</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Unified credit/outstanding balance</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Per-customer product pricing</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Outstanding credit limits (SuperAdmin)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#dcfce7;">🧾</div>
+        <div><h3>Billing &amp; Payments</h3><p>Invoices, cash, cheques, settlements</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#16a34a;"></div>Multi-method payment support</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#16a34a;"></div>Cheque lifecycle management</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#16a34a;"></div>Pending bill settlements</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#16a34a;"></div>Print-ready A4 invoice</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#fef3c7;">📋</div>
+        <div><h3>Order Bookings</h3><p>Quotations and order pipeline</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#d97706;"></div>Quotation creation &amp; export</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#d97706;"></div>One-click confirmation to bill</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#d97706;"></div>Live production needs calculator</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#d97706;"></div>Pending order visibility</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#f3e8ff;">⚙️</div>
+        <div><h3>Production &amp; Inventory</h3><p>Products, stock levels, machine logs</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Product categories &amp; stock levels</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Daily machine run logs</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Operator role tracking</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Low stock dashboard alerts</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#fff7ed;">📦</div>
+        <div><h3>Material Purchasing</h3><p>Raw material records &amp; weight verification</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Supplier invoice recording</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Scale weight verification</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Discrepancy % auto-calculation</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>KG / gram unit tracking</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#fce7f3;">🏭</div>
+        <div><h3>Supplier Management</h3><p>Suppliers, receipts, stock updates</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Supplier contact profiles</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Supply receipt with line items</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Auto inventory update on receipt</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Supplier–Customer dual role</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#ccfbf1;">💵</div>
+        <div><h3>Petty Cash Ledger</h3><p>Daily cash in/out with running balance</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#0d9488;"></div>Cash in / cash out entries</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#0d9488;"></div>Monthly ledger with opening balance</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#0d9488;"></div>Running balance per transaction</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#0d9488;"></div>Monthly Excel / PDF statements</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-head">
+        <div class="module-icon" style="background:#f1f5f9;">✅</div>
+        <div><h3>Task Management</h3><p>Assign, track, and complete tasks</p></div>
+      </div>
+      <div class="module-card-body">
+        <div class="feat-grid">
+          <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Task board (To Do / In Progress / Done)</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Priority levels (Low / Medium / High)</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>User assignment &amp; due dates</div>
+          <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Overdue alerts on dashboard</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 4</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ CUSTOMER MANAGEMENT ════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 3 — Customer Management</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 03</div>
+    <h2>Customer Management</h2>
+    <p>Centralised customer profiles with live balance and custom pricing</p>
+  </div>
+
+  <p class="body">Every customer in the system has a complete profile that tracks their contact details, account balance, and custom pricing. The system maintains a single intelligent balance field that automatically distinguishes between money the customer owes and credit they have built up.</p>
+
+  <h3 class="sub">Balance System</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; margin-bottom: 14pt;">
+    <div class="info-box">
+      <h4>🟢 Positive Balance (Credit)</h4>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">When a customer's balance is <strong>positive</strong> (e.g. Rs. +500), it means the customer has credit with the business — they have overpaid or made an advance payment. This credit is automatically deducted from their next bill.</p>
+    </div>
+    <div class="info-box">
+      <h4>🔴 Negative Balance (Outstanding)</h4>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">When a customer's balance is <strong>negative</strong> (e.g. Rs. −500), it means the customer owes us money — they have unpaid bills. This outstanding amount is automatically added to their next bill's net payable.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">Custom Product Pricing</h3>
+  <p class="body">Each customer can have a unique price set for any product. When creating a bill or booking for that customer, the system automatically loads their custom prices. If no custom price is set for a product, the default price applies. Pricing lists can be exported to Excel or PDF for customer reference.</p>
+
+  <h3 class="sub">Outstanding Credit Limit (SuperAdmin)</h3>
+  <div class="highlight-box">
+    <h4>Credit Limit Protection</h4>
+    <p>The SuperAdmin can set a maximum outstanding limit per customer. If a new PAY_LATER bill would cause the customer's outstanding balance to exceed this limit, the system <strong>blocks the bill from being created</strong> and shows a warning message. This prevents customers from running up unlimited debt and protects the business from bad debts.</p>
+  </div>
+
+  <h3 class="sub">Key Features at a Glance</h3>
+  <div class="feat-grid" style="margin-top: 8pt;">
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Create, edit, and search customers</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Unified credit/outstanding balance field</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Per-customer product prices</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Max outstanding limit (SuperAdmin only)</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Balance auto-updates on every transaction</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Net payable auto-calculated on billing</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Dashboard totals for credit &amp; outstanding</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Export customer price list (Excel/PDF)</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Live search by name across all screens</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#3b82f6;"></div>Supplier–customer dual role supported</div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 5</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ BILLING ════════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 4 — Billing &amp; Payments</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 04</div>
+    <h2>Billing &amp; Payments</h2>
+    <p>Complete invoice management with multi-method payment and cheque tracking</p>
+  </div>
+
+  <p class="body">The billing module is the financial core of the system. It handles the complete lifecycle of a sale — from creating the invoice through receiving payment (cash or cheque), tracking outstanding balances, and producing a professional printed invoice.</p>
+
+  <h3 class="sub">Bill Creation Workflow</h3>
+  <div class="flow">
+    <div class="flow-step"><div class="fs-num">Step 1</div><div class="fs-label">Select Customer</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 2</div><div class="fs-label">Add Products &amp; Qty</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 3</div><div class="fs-label">Apply Discounts</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 4</div><div class="fs-label">Choose Payment Method</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 5</div><div class="fs-label">Bill Created &amp; Stock Deducted</div></div>
+  </div>
+
+  <h3 class="sub">Payment Methods</h3>
+  <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 8pt; margin-bottom: 14pt;">
+    <div class="info-box"><h4>Full Cash</h4><p style="font-size:9pt;color:#334155;">Entire bill settled immediately in cash. Customer balance updated at once.</p></div>
+    <div class="info-box"><h4>Full Cheque</h4><p style="font-size:9pt;color:#334155;">Entire bill paid by cheque. Full cheque details recorded. Tracked until cleared.</p></div>
+    <div class="info-box"><h4>Pay Later</h4><p style="font-size:9pt;color:#334155;">Bill is deferred. Customer's outstanding balance increases. Subject to credit limit.</p></div>
+    <div class="info-box"><h4>Partial Cash</h4><p style="font-size:9pt;color:#334155;">Partial cash paid at time of billing. Remaining amount stays outstanding.</p></div>
+    <div class="info-box"><h4>Partial Cheque</h4><p style="font-size:9pt;color:#334155;">Partial cheque payment received. Remainder stays pending.</p></div>
+    <div class="info-box"><h4>Mixed (Cash + Cheque)</h4><p style="font-size:9pt;color:#334155;">Bill is split across a cash portion and a cheque portion simultaneously.</p></div>
+  </div>
+
+  <h3 class="sub">Cheque Lifecycle Management</h3>
+  <table class="data-table">
+    <thead><tr><th>Cheque Status</th><th>What It Means</th><th>System Action</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip chip-orange">Pending</span></td><td>Cheque received but not yet banked</td><td>Bill marked as having pending cheque payment</td></tr>
+      <tr><td><span class="chip chip-green">Cleared</span></td><td>Bank has confirmed the cheque was honoured</td><td>Bill status updated to Completed</td></tr>
+      <tr><td><span class="chip chip-red">Bounced</span></td><td>Bank returned the cheque unpaid</td><td>Payment reversed, customer balance adjusted, bill re-opened</td></tr>
+      <tr><td><span class="chip chip-gray">On Hold</span></td><td>Cheque processing paused (under investigation)</td><td>Bill remains pending, no balance change</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Bill Settlement (Pending Bills)</h3>
+  <p class="body">For any bill with an outstanding balance, the Settle Payment screen allows recording additional payments — by cash, cheque, or applying customer credit — until the bill is fully paid. Each payment is recorded individually with a date, keeping a full payment history on the bill.</p>
+
+  <h3 class="sub">Printed Invoice</h3>
+  <p class="body">Every bill has a print-ready A4 invoice that shows: company header with logo, customer details, itemised product list, subtotal / discount / bill total, customer balance adjustment, net payable, payment history, and signature lines. The invoice automatically adjusts its font size to fit up to 10 line items on a single page.</p>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 6</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ BILLING (continued) ════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 4 — Billing &amp; Payments (continued)</span>
+  </div>
+
+  <h3 class="sub">Bill Status Lifecycle</h3>
+  <div class="flow" style="margin-bottom: 16pt;">
+    <div class="flow-step" style="border-color:#f59e0b; background:#fffbeb;"><div class="fs-num">Status</div><div class="fs-label">Pending</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:#22c55e; background:#f0fdf4;"><div class="fs-num">Status</div><div class="fs-label">Completed</div></div>
+    <div class="flow-arrow" style="color:#ccc;">|</div>
+    <div class="flow-step" style="border-color:#ef4444; background:#fef2f2;"><div class="fs-num">Status</div><div class="fs-label">Cancelled</div></div>
+  </div>
+
+  <p class="body">A bill is <strong>Pending</strong> when it has an outstanding amount due. It moves to <strong>Completed</strong> when the full amount is paid (amount due = Rs. 0). A bill can be <strong>Cancelled</strong> by a SuperAdmin, which reverses the stock deduction and restores the customer's balance exactly as it was before the bill was made.</p>
+
+  <h3 class="sub">Sales Reporting Views</h3>
+  <table class="data-table">
+    <thead><tr><th>Report</th><th>Description</th><th>Export</th></tr></thead>
+    <tbody>
+      <tr><td><strong>All Sales</strong></td><td>Full list of all bills with filters by customer, date range, payment method, and status</td><td>Excel, PDF</td></tr>
+      <tr><td><strong>Cash Sales</strong></td><td>Bills paid by cash or partial cash. Includes totals and subtotals.</td><td>Excel, PDF</td></tr>
+      <tr><td><strong>Cheque Sales</strong></td><td>Bills paid by cheque. Shows cheque number, bank, maturity date, and status per payment.</td><td>Excel, PDF</td></tr>
+      <tr><td><strong>Split Sales</strong></td><td>Bills paid by a combination of cash and cheque (Mixed payment method)</td><td>Excel, PDF</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Invoice Summary on Printed Bill</h3>
+  <div class="info-box">
+    <h4>What appears on the printed invoice</h4>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Company name, logo, address, phone</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Invoice number &amp; date</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Customer name &amp; address</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Itemised products with quantity &amp; price</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Per-item discount amounts</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Subtotal, discount, bill total</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Customer balance (credit or outstanding)</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Net payable after balance adjustment</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Cash/cheque received &amp; balance due</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Payment records with cheque details</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Authorised signature &amp; received-by lines</div>
+      <div class="feat-item"><div class="feat-dot" style="background:#0e7490;"></div>Auto-scales font for 5 / 6–9 / 10+ items</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 7</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ BOOKINGS ═══════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 5 — Order Bookings &amp; Quotations</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 05</div>
+    <h2>Order Bookings &amp; Quotations</h2>
+    <p>From quotation to confirmed order with live production planning</p>
+  </div>
+
+  <p class="body">The booking module manages the pre-billing stage of an order. A booking is a quotation — it records what a customer wants and at what price, without yet deducting stock or creating a financial transaction. Once the customer confirms, the booking converts directly into a bill and stock is deducted.</p>
+
+  <h3 class="sub">Booking Workflow</h3>
+  <div class="flow" style="margin-bottom: 16pt;">
+    <div class="flow-step"><div class="fs-num">Step 1</div><div class="fs-label">Select Customer &amp; Date</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 2</div><div class="fs-label">Add Products &amp; Quantities</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 3</div><div class="fs-label">Review Production Needs</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 4</div><div class="fs-label">Save as Quotation</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 5</div><div class="fs-label">Confirm → Bill Created</div></div>
+  </div>
+
+  <h3 class="sub">Live Production Needs Calculator</h3>
+  <div class="highlight-box">
+    <h4>What the Production Needs Panel Shows</h4>
+    <p>As products and quantities are added to a booking, the system immediately queries the database and shows for each product:</p>
+    <ul style="margin-top: 6pt;">
+      <li><strong>In Stock</strong> — current available quantity in the warehouse</li>
+      <li><strong>Other Pending Orders</strong> — total quantity of this product already booked in other pending (unconfirmed) orders</li>
+      <li><strong>This Order</strong> — quantity being entered in the current booking</li>
+      <li><strong>Total Required</strong> — sum of all pending orders + this order</li>
+      <li><strong>Production Needed</strong> — how much more must be produced to fulfil all orders (highlighted in red if &gt; 0, green if stock is sufficient)</li>
+    </ul>
+    <p style="margin-top: 8pt;">This gives the production team an instant view of exactly how many units to manufacture before confirming orders, eliminating shortfalls and production surprises.</p>
+  </div>
+
+  <h3 class="sub">Quotation Export</h3>
+  <p class="body">Any pending booking can be exported as a professional quotation document in both PDF and Excel formats, ready to send to the customer for approval before confirmation.</p>
+
+  <h3 class="sub">Booking Status</h3>
+  <div style="display:flex; gap:10pt; margin: 10pt 0;">
+    <div style="flex:1; border:1px solid #fde68a; background:#fffbeb; border-radius:8px; padding:10pt 14pt;">
+      <strong style="color:#b45309; font-size:10pt;">PENDING</strong>
+      <p style="font-size:9pt; color:#78350f; margin-top:4pt;">Quotation created. No stock deducted. Awaiting customer confirmation or production readiness.</p>
+    </div>
+    <div style="flex:1; border:1px solid #bbf7d0; background:#f0fdf4; border-radius:8px; padding:10pt 14pt;">
+      <strong style="color:#166534; font-size:10pt;">CONFIRMED</strong>
+      <p style="font-size:9pt; color:#14532d; margin-top:4pt;">Converted to a bill. Stock deducted. Payment tracking begins. Linked bill number shown.</p>
+    </div>
+    <div style="flex:1; border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:10pt 14pt;">
+      <strong style="color:#b91c1c; font-size:10pt;">CANCELLED</strong>
+      <p style="font-size:9pt; color:#7f1d1d; margin-top:4pt;">Order cancelled. No stock impact. Preserved for record-keeping. Not counted in production needs.</p>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 8</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════ PRODUCTION ═════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 6 — Production &amp; Inventory</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 06</div>
+    <h2>Production &amp; Inventory Management</h2>
+    <p>Product catalogue, live stock levels, machine logs, and operator tracking</p>
+  </div>
+
+  <p class="body">The production module serves as both the product catalogue and the manufacturing diary. It maintains the current stock level for every product and logs daily machine runs with full operator details — giving management a complete picture of both what is in stock and how it was produced.</p>
+
+  <h3 class="sub">Product Catalogue</h3>
+  <table class="data-table">
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Product Name</strong></td><td>Name of the product (unique per category)</td></tr>
+      <tr><td><strong>Category</strong></td><td>Product category grouping (e.g. Pipes, Fittings, Hardware)</td></tr>
+      <tr><td><strong>Size</strong></td><td>Dimension or size variant (optional, e.g. 2 inch, 50mm)</td></tr>
+      <tr><td><strong>Available Qty</strong></td><td>Current stock quantity — automatically updated by billing, booking, and supply receipts</td></tr>
+      <tr><td><strong>Supplier</strong></td><td>Linked supplier for this product's raw material</td></tr>
+      <tr><td><strong>Custom Prices</strong></td><td>Per-customer pricing overrides are linked to each product</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Stock Movement (Automatic)</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-bottom: 14pt;">
+    <div class="info-box" style="border-color:#fee2e2;">
+      <h4 style="color:#991b1b;">📉 Stock Decreases When…</h4>
+      <p style="font-size:9pt; color:#334155; line-height:1.6;">
+        • A bill is created (stock deducted at billing time)<br>
+        • A booking is confirmed and converted to a bill<br>
+        Stock is deducted immediately and permanently at that moment.
+      </p>
+    </div>
+    <div class="info-box" style="border-color:#dcfce7;">
+      <h4 style="color:#166534;">📈 Stock Increases When…</h4>
+      <p style="font-size:9pt; color:#334155; line-height:1.6;">
+        • A supply receipt is recorded from a supplier<br>
+        • A bill or booking is cancelled (stock restored)<br>
+        The system automatically reverses any deductions on cancellation.
+      </p>
+    </div>
+  </div>
+
+  <h3 class="sub">Daily Machine Run Logs</h3>
+  <p class="body">Every day's production activity is logged in the system. Each machine run records:</p>
+  <div class="feat-grid" style="margin: 8pt 0 14pt;">
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Production date</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Machine name</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Product being manufactured</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Machine operator name</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Crusher operator name</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Material mixer name</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Extra work employee name</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Machine not working flag</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Production notes</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#9333ea;"></div>Filterable by date, machine, operator</div>
+  </div>
+
+  <div class="highlight-box">
+    <h4>Low Stock Alerts</h4>
+    <p>The dashboard automatically shows an alert when any product's stock falls below <strong>10 units</strong>. Products below <strong>3 units</strong> are flagged as <strong>Critical Stock</strong>. This gives the production team early warning to start manufacturing before orders are affected.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 9</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ MATERIAL PURCHASING ════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 7 — Material Purchasing</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 07</div>
+    <h2>Material Purchasing</h2>
+    <p>Raw material purchase recording with scale weight verification</p>
+  </div>
+
+  <p class="body">The material purchasing module records every raw material purchase from suppliers. A key feature is <strong>scale weight verification</strong> — the ability to record the actual weight measured on the business's own scale and compare it against the supplier's stated quantity, automatically calculating any discrepancy.</p>
+
+  <h3 class="sub">Purchase Record Fields</h3>
+  <table class="data-table">
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Supplier</strong></td><td>Name of the supplier providing the material</td></tr>
+      <tr><td><strong>Invoice Number</strong></td><td>Supplier's invoice number (unique per purchase)</td></tr>
+      <tr><td><strong>Received Date</strong></td><td>Date the material was physically received</td></tr>
+      <tr><td><strong>Material Name</strong></td><td>Description of the raw material purchased</td></tr>
+      <tr><td><strong>Quantity</strong></td><td>Quantity as stated on the supplier's invoice</td></tr>
+      <tr><td><strong>Unit Type</strong></td><td>KG (kilogram) or G (gram)</td></tr>
+      <tr><td><strong>Unit Price</strong></td><td>Price per unit of the material</td></tr>
+      <tr><td><strong>Total Amount</strong></td><td>Auto-calculated: Quantity × Unit Price</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Scale Weight Verification</h3>
+  <div class="highlight-box">
+    <h4>Protecting Against Weight Discrepancies</h4>
+    <p>When the business receives a material delivery, the actual weight is measured on the company's own scale. The system records this <strong>scale weight</strong> alongside the supplier's stated quantity and automatically calculates:</p>
+    <ul style="margin-top:6pt;">
+      <li><strong>Weight Discrepancy</strong> = Scale Weight − Invoice Quantity</li>
+      <li><strong>Discrepancy Percentage</strong> = (Discrepancy ÷ Invoice Quantity) × 100</li>
+    </ul>
+    <p style="margin-top:8pt;">This provides auditable evidence when a supplier is consistently delivering less than invoiced — protecting the business from overpaying for materials it did not receive.</p>
+  </div>
+
+  <h3 class="sub">Key Features</h3>
+  <div class="feat-grid" style="margin-top: 8pt;">
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Record purchases with full invoice details</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>KG and gram unit type tracking</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Scale weight recording &amp; verification</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Auto discrepancy % calculation</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Filter by supplier, date range, month/year</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Export to Excel or PDF</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Unique invoice number validation</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#ea580c;"></div>Full edit &amp; delete history</div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 10</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ SUPPLIERS ═════════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 8 — Supplier Management</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 08</div>
+    <h2>Supplier Management</h2>
+    <p>Supplier profiles, supply receipts, and automatic inventory updates</p>
+  </div>
+
+  <p class="body">The supplier module manages the inward side of the business — recording goods received from suppliers, updating product stock automatically, and optionally crediting the supplier's account if they also operate as a customer of the business.</p>
+
+  <h3 class="sub">Supplier Profile</h3>
+  <div class="feat-grid" style="margin: 8pt 0 14pt;">
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Supplier name (unique)</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Phone number</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Email address</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Full address</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Notes / terms</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#db2777;"></div>Linked customer profile (optional)</div>
+  </div>
+
+  <h3 class="sub">Supply Receipt Workflow</h3>
+  <div class="flow" style="margin-bottom: 14pt;">
+    <div class="flow-step"><div class="fs-num">Step 1</div><div class="fs-label">Select Supplier</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 2</div><div class="fs-label">Add Products &amp; Quantities Received</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 3</div><div class="fs-label">Record Cost Prices</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="fs-num">Step 4</div><div class="fs-label">Save — Stock Auto-Updated</div></div>
+  </div>
+
+  <h3 class="sub">Supplier–Customer Dual Role</h3>
+  <div class="highlight-box">
+    <h4>When a Supplier is Also a Customer</h4>
+    <p>A supplier can be linked to an existing Customer profile. When a supply receipt is recorded for such a supplier, the system can automatically <strong>apply the supply cost as a credit</strong> to that customer's account balance. This handles the case where a party both buys from and supplies to Senovka Plastics — the debt is offset automatically.</p>
+  </div>
+
+  <h3 class="sub">Supply Receipt Reversal</h3>
+  <p class="body">If a supply receipt needs to be deleted (for example if it was entered in error), the system automatically reverses all effects: stock quantities are reduced back to their previous levels, and any customer credit that was applied is reversed.</p>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 11</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ PETTY CASH ═════════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 9 — Petty Cash Ledger</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 09</div>
+    <h2>Petty Cash Ledger</h2>
+    <p>Daily cash management with running balance and monthly statements</p>
+  </div>
+
+  <p class="body">The petty cash module replaces the physical cash book with a digital ledger. Every cash movement in or out of the petty cash fund is recorded, and the system maintains a continuously running balance from the very first entry to today.</p>
+
+  <h3 class="sub">Cash Entry Types</h3>
+  <div style="display:flex; gap:14pt; margin: 12pt 0;">
+    <div style="flex:1; border:1px solid #bbf7d0; background:#f0fdf4; border-radius:8px; padding:12pt 16pt;">
+      <h4 style="color:#166534; font-size:11pt; margin-bottom:6pt;">💰 Cash In</h4>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">Money coming into the petty cash fund — top-ups, reimbursements received, or cash refunds. Each entry records the date, reference number, amount, and purpose.</p>
+    </div>
+    <div style="flex:1; border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:12pt 16pt;">
+      <h4 style="color:#b91c1c; font-size:11pt; margin-bottom:6pt;">💸 Cash Out</h4>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">Money paid out for small business expenses — stationery, transport, minor repairs. Each entry records the date, reference number, amount, and what it was spent on.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">Monthly Ledger View</h3>
+  <table class="data-table">
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Date</strong></td><td>Date of the transaction</td></tr>
+      <tr><td><strong>Reference</strong></td><td>Transaction reference number</td></tr>
+      <tr><td><strong>Purpose / Description</strong></td><td>What the money was for</td></tr>
+      <tr><td><strong>Cash In</strong></td><td>Amount received (positive)</td></tr>
+      <tr><td><strong>Cash Out</strong></td><td>Amount paid out (negative)</td></tr>
+      <tr><td><strong>Running Balance</strong></td><td>Cumulative balance after each entry — continuous from the very first record</td></tr>
+    </tbody>
+  </table>
+
+  <p class="body" style="margin-top:10pt;">The monthly view shows the <strong>opening balance</strong> carried forward from the previous month, all transactions for the selected month, and the <strong>closing balance</strong> at month end. Month navigation arrows allow moving backward and forward through the records.</p>
+
+  <h3 class="sub">Optional Receipt Image</h3>
+  <p class="body">Each petty cash entry optionally supports uploading a photo of the receipt or bill, creating an auditable paper trail directly within the system.</p>
+
+  <div class="highlight-box" style="margin-top: 12pt;">
+    <h4>Monthly Statement Export</h4>
+    <p>Each monthly ledger can be exported to <strong>Excel</strong> or <strong>PDF</strong> with full formatting — including the opening balance, all entries with running balances, monthly totals, and the closing balance. Suitable for accountant review or internal audit.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 12</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ TASKS + DASHBOARD ══════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Sections 10 &amp; 11 — Tasks &amp; Dashboard</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 10</div>
+    <h2>Task Management</h2>
+    <p>Assign, track, and complete business tasks with priority and due dates</p>
+  </div>
+
+  <p class="body">The task module is an internal task board that allows the SuperAdmin to assign work to any user in the system. Tasks move through three stages and overdue items are automatically flagged on the dashboard.</p>
+
+  <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 10pt; margin: 12pt 0;">
+    <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10pt 14pt; background:#fafafa;">
+      <div style="font-size:10pt; font-weight:700; color:#475569; margin-bottom:8pt; border-bottom:2px solid #e2e8f0; padding-bottom:5pt;">📋 To Do</div>
+      <p style="font-size:9pt; color:#64748b; line-height:1.5;">New tasks waiting to be started. Assigned to a user and visible in their task list.</p>
+    </div>
+    <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10pt 14pt; background:#fafafa;">
+      <div style="font-size:10pt; font-weight:700; color:#d97706; margin-bottom:8pt; border-bottom:2px solid #fde68a; padding-bottom:5pt;">⚡ In Progress</div>
+      <p style="font-size:9pt; color:#64748b; line-height:1.5;">Tasks currently being worked on. Shows expected completion timeframe.</p>
+    </div>
+    <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10pt 14pt; background:#fafafa;">
+      <div style="font-size:10pt; font-weight:700; color:#16a34a; margin-bottom:8pt; border-bottom:2px solid #bbf7d0; padding-bottom:5pt;">✅ Done</div>
+      <p style="font-size:9pt; color:#64748b; line-height:1.5;">Completed tasks. Preserved in the system for record-keeping and audit.</p>
+    </div>
+  </div>
+
+  <div class="feat-grid" style="margin-bottom:18pt;">
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Three priority levels: Low / Medium / High</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Due date tracking with overdue detection</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Assignee per task (any system user)</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Optional image/document attachment</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Dashboard alerts for overdue tasks</div>
+    <div class="feat-item"><div class="feat-dot" style="background:#475569;"></div>Created by / assigned to tracking</div>
+  </div>
+
+  <div class="section-header" style="margin-top: 20pt;">
+    <div class="section-num">Section 11</div>
+    <h2>Dashboard &amp; Alerts</h2>
+    <p>Real-time overview of the business at a single glance</p>
+  </div>
+
+  <p class="body">The dashboard is the first screen a user sees after logging in. It shows the most important operational information at a glance, without the user needing to navigate anywhere.</p>
+
+  <table class="data-table">
+    <thead><tr><th>Dashboard Widget</th><th>What It Shows</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Low Stock Alerts</strong></td><td>Products with fewer than 10 units in stock. Critical (below 3) are highlighted separately.</td></tr>
+      <tr><td><strong>Overdue Tasks</strong></td><td>Tasks past their due date that are not yet completed. Shows task name, assignee, days overdue.</td></tr>
+      <tr><td><strong>Tasks Due Soon</strong></td><td>Tasks due within the next 3 days — early warning before they become overdue.</td></tr>
+      <tr><td><strong>Task Summary</strong></td><td>Count of tasks by status: To Do, In Progress, Done.</td></tr>
+      <tr><td><strong>Recent Activity</strong></td><td>Live feed of recent system events — new customers added, bills created, bookings confirmed.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 13</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ USER ROLES ═════════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 12 — User Roles &amp; Access Control</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 12</div>
+    <h2>User Roles &amp; Access Control</h2>
+    <p>Two-tier permission system to protect sensitive data and operations</p>
+  </div>
+
+  <p class="body">The system uses role-based access control (RBAC). Every user must log in and is assigned one of two roles. This ensures that sensitive financial operations and business configuration are restricted to authorised users only.</p>
+
+  <div class="roles-row" style="margin-bottom: 16pt;">
+    <div class="role-card" style="border-color: #fde68a;">
+      <div class="role-card-head" style="background: #fffbeb; color: #b45309;">
+        👑 SuperAdmin
+      </div>
+      <div class="role-card-body">
+        <p style="font-size:9pt; color:#64748b; margin-bottom:8pt; font-style:italic;">Full system control — typically the business owner or senior manager</p>
+        <ul style="padding-left: 14pt;">
+          <li>Create, edit, and delete anything in the system</li>
+          <li>Edit bills after creation</li>
+          <li>Cancel bills and reverse all effects</li>
+          <li>Set customer maximum outstanding credit limits</li>
+          <li>Create and assign tasks to any user</li>
+          <li>Manage all user accounts and roles</li>
+          <li>Access all reports and exports</li>
+          <li>Configure company settings and branding</li>
+          <li>View full activity log of all user actions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="role-card" style="border-color: #bfdbfe;">
+      <div class="role-card-head" style="background: #eff6ff; color: #1d4ed8;">
+        👤 Regular User
+      </div>
+      <div class="role-card-body">
+        <p style="font-size:9pt; color:#64748b; margin-bottom:8pt; font-style:italic;">Day-to-day operational staff — sales, production, admin</p>
+        <ul style="padding-left: 14pt;">
+          <li>Create bills and bookings</li>
+          <li>View and search customers</li>
+          <li>Record petty cash entries</li>
+          <li>Log daily machine runs</li>
+          <li>Record material purchases</li>
+          <li>Record supply receipts</li>
+          <li>View and complete assigned tasks</li>
+          <li>Export reports for their area</li>
+          <li>Cannot edit bills or cancel transactions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub">Audit &amp; Activity Logging</h3>
+  <p class="body">Every significant action in the system is logged automatically — who did it, what they did, when, and on which record. This creates a complete audit trail and allows the SuperAdmin to review all activity across every module.</p>
+
+  <table class="data-table">
+    <thead><tr><th>Logged Event Categories</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td>Billing</td><td>Bill created, payment settled, bill cancelled, cheque bounced</td></tr>
+      <tr><td>Customers</td><td>Customer added, balance adjusted, price updated</td></tr>
+      <tr><td>Bookings</td><td>Quotation created, booking confirmed, booking cancelled</td></tr>
+      <tr><td>Production</td><td>Product added/edited, machine run logged, stock updated</td></tr>
+      <tr><td>Purchasing</td><td>Material purchase recorded, supply receipt saved or deleted</td></tr>
+      <tr><td>Users</td><td>Login, logout, user account created, role changed</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 14</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ REPORTING ══════════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 13 — Reporting &amp; Exports</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 13</div>
+    <h2>Reporting &amp; Exports</h2>
+    <p>Every module supports Excel and PDF export with filtering</p>
+  </div>
+
+  <p class="body">Every report in the system can be exported in two formats — <strong>Excel (.xlsx)</strong> for further analysis in spreadsheets, and <strong>PDF</strong> for sharing, printing, or archiving. Exports always reflect the current filter state — if you have filtered by date range or customer, the export contains exactly those records.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Module</th>
+        <th>Report Name</th>
+        <th>Key Filters Available</th>
+        <th>Excel</th>
+        <th>PDF</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Billing</td><td>All Sales Report</td><td>Customer, date range, payment method, status</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Billing</td><td>Cash Sales Report</td><td>Customer, date range</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Billing</td><td>Cheque Sales Report</td><td>Customer, date range, cheque status</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Billing</td><td>Individual Invoice (Print)</td><td>Per-bill, auto-scaling layout</td><td>—</td><td>✓</td></tr>
+      <tr><td>Bookings</td><td>Quotation Document</td><td>Per-booking</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Bookings</td><td>All Bookings Report</td><td>Customer, date range, status</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Customers</td><td>Customer Price List</td><td>Per customer</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Production</td><td>Daily Machine Run Report</td><td>Date range, machine, operator, product</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Material Purchasing</td><td>Purchase Records Report</td><td>Supplier, date range, unit type</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Suppliers</td><td>Supply Receipts</td><td>Supplier, date range</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Petty Cash</td><td>Monthly Ledger Statement</td><td>Month, year</td><td>✓</td><td>✓</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box" style="margin-top: 14pt;">
+    <h4>Report Quality</h4>
+    <p>All PDF reports include: the company logo and name in the header, generation date and time, applied filter summary, column headers, data rows with alternating shading for readability, and totals/summaries at the bottom of the page.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential</span>
+    <span>Page 15</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ KEY BENEFITS ═══════════════════════════════════ -->
+<div class="page">
+<div class="inner">
+  <div class="page-header">
+    <span><strong>Senovka Plastics ERP</strong> — System Proposal</span>
+    <span>Section 14 — Key Business Benefits</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-num">Section 14</div>
+    <h2>Key Business Benefits</h2>
+    <p>How the ERP system directly improves business operations</p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12pt; margin-bottom: 16pt;">
+
+    <div style="border:1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius:8px; padding:12pt 14pt; background:#f0fdf4;">
+      <div style="font-size:11pt; font-weight:700; color:#166534; margin-bottom:6pt;">📊 Complete Financial Visibility</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">At any moment, the business can see exactly who owes how much, what is in credit, what bills are pending, and what cheques are outstanding — all in one system, in real time.</p>
+    </div>
+
+    <div style="border:1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius:8px; padding:12pt 14pt; background:#f0fdf4;">
+      <div style="font-size:11pt; font-weight:700; color:#166534; margin-bottom:6pt;">🔒 Credit Risk Protection</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">The per-customer outstanding limit blocks sales on credit beyond approved thresholds, preventing bad debts before they happen rather than chasing them afterwards.</p>
+    </div>
+
+    <div style="border:1px solid #bae6fd; border-left: 4px solid #0ea5e9; border-radius:8px; padding:12pt 14pt; background:#f0f9ff;">
+      <div style="font-size:11pt; font-weight:700; color:#0c4a6e; margin-bottom:6pt;">🏭 Production Planning Intelligence</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">The live production needs calculator prevents stockouts by showing exactly how much to manufacture before confirming orders — connecting the sales team directly to production planning.</p>
+    </div>
+
+    <div style="border:1px solid #bae6fd; border-left: 4px solid #0ea5e9; border-radius:8px; padding:12pt 14pt; background:#f0f9ff;">
+      <div style="font-size:11pt; font-weight:700; color:#0c4a6e; margin-bottom:6pt;">✉️ Professional Customer Communications</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">Instantly generate polished A4 invoices and Excel/PDF quotations for customers, reflecting the company's professional image and eliminating handwritten paperwork.</p>
+    </div>
+
+    <div style="border:1px solid #e9d5ff; border-left: 4px solid #9333ea; border-radius:8px; padding:12pt 14pt; background:#faf5ff;">
+      <div style="font-size:11pt; font-weight:700; color:#6b21a8; margin-bottom:6pt;">🔍 Full Traceability &amp; Audit Trail</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">Every transaction, edit, cancellation, and login is logged with the user, time, and details. Management can always answer "who did what and when" without relying on memory.</p>
+    </div>
+
+    <div style="border:1px solid #e9d5ff; border-left: 4px solid #9333ea; border-radius:8px; padding:12pt 14pt; background:#faf5ff;">
+      <div style="font-size:11pt; font-weight:700; color:#6b21a8; margin-bottom:6pt;">⚖️ Material Purchase Accuracy</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">The scale weight verification feature means every delivery is physically checked and any weight discrepancy is recorded — protecting the business from being overcharged for materials not received.</p>
+    </div>
+
+    <div style="border:1px solid #fed7aa; border-left: 4px solid #ea580c; border-radius:8px; padding:12pt 14pt; background:#fff7ed;">
+      <div style="font-size:11pt; font-weight:700; color:#c2410c; margin-bottom:6pt;">📱 Access From Any Device</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">The system runs in a web browser — no installation required. Staff can access it from desktop computers, laptops, tablets, or smartphones from the office or the factory floor.</p>
+    </div>
+
+    <div style="border:1px solid #fed7aa; border-left: 4px solid #ea580c; border-radius:8px; padding:12pt 14pt; background:#fff7ed;">
+      <div style="font-size:11pt; font-weight:700; color:#c2410c; margin-bottom:6pt;">🧾 Cheque Bounce Recovery</div>
+      <p style="font-size:9.5pt; color:#334155; line-height:1.6;">When a cheque bounces, a single click reverses the payment, restores the customer's balance, reopens the bill, and preserves the complete audit trail — no manual corrections needed.</p>
+    </div>
+
+  </div>
+
+  <div style="background: linear-gradient(135deg, #0f172a, #1e3a5f); border-radius: 10px; padding: 20pt 24pt; color: #fff; margin-top: 8pt;">
+    <div style="font-size: 13pt; font-weight: 700; margin-bottom: 8pt; color: #7dd3fc;">Summary</div>
+    <p style="font-size: 10pt; line-height: 1.7; color: rgba(255,255,255,.85);">
+      The Senovka Plastics ERP system delivers a fully integrated, purpose-built business management platform that covers every operational area of the company. It eliminates manual record-keeping errors, provides real-time financial and operational visibility, enforces business rules automatically, and generates professional reports and documents on demand. Built specifically for Senovka Plastics, it reflects the exact workflows, pricing structures, and business rules of the company — not a generic off-the-shelf solution adapted to fit.
+    </p>
+    <div style="margin-top: 14pt; display: flex; gap: 10pt; flex-wrap: wrap;">
+      <span class="chip chip-teal">9 Integrated Modules</span>
+      <span class="chip chip-blue">Role-Based Access</span>
+      <span class="chip chip-green">Live Stock Tracking</span>
+      <span class="chip chip-orange">Cheque Lifecycle</span>
+      <span class="chip chip-purple">Full Audit Log</span>
+      <span class="chip chip-gray">Excel &amp; PDF Exports</span>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Senovka Plastics ERP — System Proposal</span>
+    <span>Confidential — Senovka Plastics &amp; Hardware — 2026</span>
+    <span>Page 16</span>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

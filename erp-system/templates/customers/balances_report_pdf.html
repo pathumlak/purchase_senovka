@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body  { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 20px; }
+  h1    { font-size: 15px; margin: 0 0 2px; }
+  .meta { font-size: 8.5px; color: #666; margin-bottom: 12px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 14px; }
+  .sum-box { border: 1px solid #ddd; border-radius: 4px; padding: 6px 12px; }
+  .sum-box .lbl { font-size: 7.5px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sum-box .val { font-size: 13px; font-weight: bold; margin-top: 1px; }
+  .val-red { color: #dc2626; }
+  .val-green { color: #16a34a; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th  { padding: 5px 6px; text-align: left; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  th.r, td.r { text-align: right; }
+  td  { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; font-size: 8.5px; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .owes   { color: #dc2626; font-weight: 700; }
+  .credit { color: #16a34a; font-weight: 700; }
+  .settled { color: #9ca3af; }
+  tfoot td { font-weight: bold; background: #eff6ff; border-top: 2px solid #1d4ed8; font-size: 9px; }
+  .footer { margin-top: 16px; font-size: 7.5px; color: #aaa; text-align: right; }
+</style>
+</head>
+<body>
+
+<h1>SENOVKA ERP — Customer Balances Report</h1>
+<p class="meta">As of {{ today|date:"d M Y" }} &middot; Generated: {{ generated_at|date:"d M Y H:i" }}</p>
+
+<div class="summary">
+  <div class="sum-box">
+    <div class="lbl">Total Customers</div>
+    <div class="val">{{ total_customers }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Outstanding (owed to us)</div>
+    <div class="val val-red">Rs. {{ total_outstanding|floatformat:2 }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Credit (we owe)</div>
+    <div class="val val-green">Rs. {{ total_credit|floatformat:2 }}</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Customer</th>
+      <th class="r">Balance (Rs.)</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in customers %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><strong>{{ c.name }}</strong></td>
+      <td class="r">
+        {% if c.balance < 0 %}<span class="owes">{{ c.balance|floatformat:2 }}</span>
+        {% elif c.balance > 0 %}<span class="credit">{{ c.balance|floatformat:2 }}</span>
+        {% else %}<span class="settled">0.00</span>{% endif %}
+      </td>
+      <td>
+        {% if c.balance < 0 %}Owes us
+        {% elif c.balance > 0 %}We owe (credit)
+        {% else %}Settled{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="text-align:center;padding:16px;color:#9ca3af;">No customers found.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2">TOTAL OUTSTANDING (owed to us)</td>
+      <td class="r owes">{{ total_outstanding|floatformat:2 }}</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td colspan="2">TOTAL CREDIT (we owe)</td>
+      <td class="r credit">{{ total_credit|floatformat:2 }}</td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+
+<p class="footer">SENOVKA ERP &mdash; Customer Balances &mdash; {{ generated_at|date:"d M Y" }}</p>
+</body>
+</html>

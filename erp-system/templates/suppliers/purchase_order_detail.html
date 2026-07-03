@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}{{ order.order_number }} — SENOVKA ERP{% endblock %}
+{% block page_title %}Purchase Order{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <a href="{% url 'suppliers:purchase_order_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Purchase Orders
+    </a>
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'suppliers:purchase_order_pdf' order.pk %}" class="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        PDF
+      </a>
+      <a href="{% url 'suppliers:purchase_order_excel' order.pk %}" class="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2z"/></svg>
+        Excel
+      </a>
+      {% if order.status == 'pending' %}
+      <form method="POST" action="{% url 'suppliers:purchase_order_receive' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Mark this order as received? This will add stock and update customer balance.')"
+                class="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Mark Received
+        </button>
+      </form>
+      <form method="POST" action="{% url 'suppliers:purchase_order_cancel' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Cancel this purchase order?')"
+                class="inline-flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+          Cancel Order
+        </button>
+      </form>
+      {% endif %}
+      {% if order.status != 'received' %}
+      <form method="POST" action="{% url 'suppliers:purchase_order_delete' order.pk %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Delete this purchase order? This cannot be undone.')"
+                class="inline-flex items-center gap-1.5 px-3 py-2 border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">
+          Delete
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Order header card -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Purchase Order</p>
+        <h2 class="text-2xl font-bold text-gray-900 mt-0.5">{{ order.order_number }}</h2>
+        <p class="text-sm text-gray-500 mt-1">Ordered from <span class="font-medium text-gray-700">{{ order.supplier.name }}</span></p>
+      </div>
+      <div>
+        {% if order.status == 'pending' %}
+        <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-700">Pending</span>
+        {% elif order.status == 'received' %}
+        <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700">Received</span>
+        {% else %}
+        <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-500">Cancelled</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Order Date</p>
+        <p class="font-medium text-gray-800 mt-0.5">{{ order.order_date|date:"d M Y" }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Expected</p>
+        <p class="font-medium text-gray-800 mt-0.5">{{ order.expected_date|date:"d M Y"|default:"—" }}</p>
+      </div>
+      {% if order.received_date %}
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Received On</p>
+        <p class="font-medium text-green-700 mt-0.5">{{ order.received_date|date:"d M Y" }}</p>
+      </div>
+      {% endif %}
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Order Total</p>
+        <p class="text-lg font-bold text-gray-900 mt-0.5">Rs. {{ order.total_cost|floatformat:2 }}</p>
+      </div>
+    </div>
+
+    {% if order.notes %}
+    <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+      <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+      <p class="text-sm text-gray-700">{{ order.notes }}</p>
+    </div>
+    {% endif %}
+
+    {% if order.supplier.customer %}
+    <div class="mt-4 p-3 rounded-lg border {% if order.balance_deducted %}border-green-200 bg-green-50{% else %}border-blue-200 bg-blue-50{% endif %}">
+      <p class="text-xs font-semibold {% if order.balance_deducted %}text-green-700{% else %}text-blue-700{% endif %}">
+        Linked Customer: {{ order.supplier.customer.name }}
+        {% if order.balance_deducted %}
+        — Rs. {{ order.total_cost|floatformat:2 }} credited to balance on receipt.
+        {% else %}
+        — Rs. {{ order.total_cost|floatformat:2 }} will be credited to their balance when received.
+        {% endif %}
+      </p>
+      <p class="text-xs {% if order.balance_deducted %}text-green-600{% else %}text-blue-600{% endif %} mt-0.5">
+        Current balance: Rs. {{ order.supplier.customer.balance|floatformat:2 }}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Items table -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h3 class="font-semibold text-gray-900">Order Items</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Price</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Line Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for item in order.items.all %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 text-sm text-gray-400">{{ forloop.counter }}</td>
+            <td class="px-5 py-3 text-sm font-medium text-gray-900">{{ item.product.name }}</td>
+            <td class="px-5 py-3 text-sm text-gray-500">{{ item.product.category.name }}</td>
+            <td class="px-5 py-3 text-sm text-gray-700 text-right">{{ item.quantity }}</td>
+            <td class="px-5 py-3 text-sm text-gray-700 text-right">Rs. {{ item.unit_price|floatformat:2 }}</td>
+            <td class="px-5 py-3 text-sm font-semibold text-gray-900 text-right">Rs. {{ item.line_total|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="bg-gray-50">
+            <td colspan="5" class="px-5 py-4 text-sm font-semibold text-gray-700 text-right uppercase tracking-wide">Total</td>
+            <td class="px-5 py-4 text-base font-bold text-gray-900 text-right">Rs. {{ order.total_cost|floatformat:2 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

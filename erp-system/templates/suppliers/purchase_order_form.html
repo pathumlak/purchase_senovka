@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}New Purchase Order — SENOVKA ERP{% endblock %}
+{% block page_title %}New Purchase Order{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
+
+  <a href="{% url 'suppliers:purchase_order_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    Back to Purchase Orders
+  </a>
+
+  <form method="POST" id="po-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="supplier_id" id="f-supplier-id">
+    <input type="hidden" name="items_json"  id="f-items-json">
+
+    <!-- Supplier & Dates -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h3 class="text-base font-semibold text-gray-900">Order Details</h3>
+      </div>
+      <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Supplier <span class="text-red-500">*</span></label>
+          <select id="supplier-select" onchange="onSupplierChange(this)"
+                  class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">— Select supplier —</option>
+            {% for s in suppliers %}
+            <option value="{{ s.id }}"
+                    data-name="{{ s.name|escapejs }}"
+                    data-customer="{{ s.customer.name|default:''|escapejs }}"
+                    data-balance="{{ s.customer.balance|default:'0' }}">
+              {{ s.name }}{% if s.customer %} ({{ s.customer.name }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Supplier info panel -->
+        <div id="supplier-info" class="sm:col-span-2 hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-lg p-3 border border-primary-200 bg-primary-50">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Supplier</p>
+              <p id="si-name" class="text-sm font-bold text-gray-900 mt-0.5"></p>
+            </div>
+            <div id="si-customer-card" class="hidden rounded-lg p-3 border border-green-200 bg-green-50">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Linked Customer</p>
+              <p id="si-customer" class="text-sm font-bold text-green-800 mt-0.5"></p>
+            </div>
+            <div id="si-balance-card" class="hidden rounded-lg p-3 border border-blue-200 bg-blue-50">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Current Balance</p>
+              <p id="si-balance" class="text-sm font-bold text-blue-800 mt-0.5"></p>
+            </div>
+          </div>
+          <p id="si-offset-note" class="hidden mt-2 text-xs text-amber-700 font-medium bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            When this order is marked as received, the total will be <strong>deducted from the linked customer's balance</strong>.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Order Date <span class="text-red-500">*</span></label>
+          <input type="date" name="order_date" value="{{ today }}"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Expected Delivery Date</label>
+          <input type="date" name="expected_date"
+                 class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+          <textarea name="notes" rows="2" placeholder="Optional notes for the supplier…"
+                    class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none resize-none"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-900">Order Items</h3>
+        <button type="button" onclick="addRow()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Item
+        </button>
+      </div>
+
+      <div id="items-container" class="divide-y divide-gray-100">
+        <!-- Rows added by JS -->
+      </div>
+
+      <div id="items-empty" class="px-5 py-8 text-center text-sm text-gray-400">
+        No items yet. Click "Add Item" to start.
+      </div>
+
+      <!-- Totals -->
+      <div class="px-5 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+        <div class="text-right">
+          <span class="text-sm text-gray-500 mr-4">Order Total</span>
+          <span id="grand-total" class="text-lg font-bold text-gray-900">Rs. 0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product search datalist (hidden) -->
+    <datalist id="product-datalist">
+      {% for p in products %}<option value="{{ p.name }}" data-id="{{ p.id }}">{% endfor %}
+    </datalist>
+
+    <!-- Submit -->
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'suppliers:purchase_order_list' %}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
+      <button type="button" onclick="submitForm()" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition">Create Purchase Order</button>
+    </div>
+  </form>
+</div>
+
+<!-- Item row template (hidden) -->
+<template id="row-template">
+  <div class="item-row flex flex-wrap gap-3 px-5 py-4 items-end">
+    <div class="flex-1 min-w-48">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Product <span class="text-red-500">*</span></label>
+      <div class="relative">
+        <input type="text" placeholder="Search product…" autocomplete="off"
+               class="product-search w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+               oninput="onProductSearch(this)" onblur="onProductBlur(this)">
+        <div class="product-dropdown hidden absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto text-sm"></div>
+        <input type="hidden" class="product-id">
+      </div>
+    </div>
+    <div class="w-28">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Qty <span class="text-red-500">*</span></label>
+      <input type="number" min="0.01" step="0.01" placeholder="0" class="qty-input w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" oninput="recalcRow(this)">
+    </div>
+    <div class="w-36">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Unit Price (Rs.)</label>
+      <input type="number" min="0" step="0.01" placeholder="0.00" class="price-input w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" oninput="recalcRow(this)">
+    </div>
+    <div class="w-32 text-right">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Line Total</label>
+      <p class="line-total py-2 text-sm font-semibold text-gray-900">Rs. 0.00</p>
+    </div>
+    <button type="button" onclick="removeRow(this)" class="mb-0.5 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Remove">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const products = [
+  {% for p in products %}
+  { id: {{ p.id }}, name: "{{ p.name|escapejs }}", category: "{{ p.category.name|escapejs }}", qty: {{ p.qty }} },
+  {% endfor %}
+];
+
+function onSupplierChange(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('f-supplier-id').value = sel.value;
+  const info = document.getElementById('supplier-info');
+  if (!sel.value) { info.classList.add('hidden'); return; }
+  info.classList.remove('hidden');
+  document.getElementById('si-name').textContent = opt.dataset.name;
+  const custCard    = document.getElementById('si-customer-card');
+  const balCard     = document.getElementById('si-balance-card');
+  const offsetNote  = document.getElementById('si-offset-note');
+  const custName    = opt.dataset.customer;
+  if (custName) {
+    custCard.classList.remove('hidden');
+    balCard.classList.remove('hidden');
+    offsetNote.classList.remove('hidden');
+    document.getElementById('si-customer').textContent = custName;
+    document.getElementById('si-balance').textContent  = 'Rs. ' + parseFloat(opt.dataset.balance).toLocaleString('en-IN', {minimumFractionDigits:2});
+  } else {
+    custCard.classList.add('hidden');
+    balCard.classList.add('hidden');
+    offsetNote.classList.add('hidden');
+  }
+}
+
+function addRow() {
+  const tmpl = document.getElementById('row-template').content.cloneNode(true);
+  document.getElementById('items-container').appendChild(tmpl);
+  document.getElementById('items-empty').style.display = 'none';
+  const rows = document.querySelectorAll('.item-row');
+  rows[rows.length - 1].querySelector('.product-search').focus();
+}
+
+function removeRow(btn) {
+  btn.closest('.item-row').remove();
+  recalcTotal();
+  if (!document.querySelector('.item-row')) {
+    document.getElementById('items-empty').style.display = '';
+  }
+}
+
+function onProductSearch(input) {
+  const q   = input.value.toLowerCase().trim();
+  const dd  = input.nextElementSibling.nextElementSibling.previousElementSibling; // product-dropdown
+  const drop = input.parentElement.querySelector('.product-dropdown');
+  const matches = q ? products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 10) : products.slice(0, 10);
+  drop.innerHTML = matches.map(p =>
+    `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer" data-id="${p.id}" data-name="${p.name.replace(/"/g,'&quot;')}" onclick="selectProduct(this)">
+      <span class="font-medium">${p.name}</span>
+      <span class="text-gray-400 text-xs ml-1">${p.category} · Stock: ${p.qty}</span>
+    </div>`
+  ).join('');
+  drop.classList.toggle('hidden', matches.length === 0);
+}
+
+function selectProduct(item) {
+  const row   = item.closest('.item-row');
+  row.querySelector('.product-search').value = item.dataset.name;
+  row.querySelector('.product-id').value     = item.dataset.id;
+  item.closest('.product-dropdown').classList.add('hidden');
+}
+
+function onProductBlur(input) {
+  setTimeout(() => input.closest('.item-row').querySelector('.product-dropdown').classList.add('hidden'), 200);
+}
+
+function recalcRow(input) {
+  const row   = input.closest('.item-row');
+  const qty   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+  const price = parseFloat(row.querySelector('.price-input').value) || 0;
+  const total = qty * price;
+  row.querySelector('.line-total').textContent = 'Rs. ' + total.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  recalcTotal();
+}
+
+function recalcTotal() {
+  let grand = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const qty   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+    grand += qty * price;
+  });
+  document.getElementById('grand-total').textContent = 'Rs. ' + grand.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function submitForm() {
+  const supplierId = document.getElementById('f-supplier-id').value;
+  if (!supplierId) { alert('Please select a supplier.'); return; }
+
+  const rows = document.querySelectorAll('.item-row');
+  if (!rows.length) { alert('Please add at least one item.'); return; }
+
+  const items = [];
+  let valid = true;
+  rows.forEach(row => {
+    const pid   = row.querySelector('.product-id').value;
+    const qty   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+    if (!pid || qty <= 0) { valid = false; return; }
+    items.push({ product_id: pid, qty: qty, unit_price: price });
+  });
+
+  if (!valid) { alert('Each item needs a product and a quantity greater than 0.'); return; }
+
+  document.getElementById('f-items-json').value = JSON.stringify(items);
+  document.getElementById('po-form').submit();
+}
+</script>
+{% endblock %}

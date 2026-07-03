@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if preset_type == 'cash_in' %}Add Reimbursement{% elif preset_type == 'cash_out' %}Add Payment{% elif is_create %}New Cash Entry{% else %}Edit Entry{% endif %} — SENOVKA ERP{% endblock %}
+{% block page_title %}{% if preset_type == 'cash_in' %}Add Reimbursement{% elif preset_type == 'cash_out' %}Add Payment{% elif is_create %}New Cash Entry{% else %}Edit Entry{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'pettycash:sale_list' %}"
+       class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to Petty Cash
+    </a>
+  </div>
+
+  <!-- Form card -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+    <!-- Card header — colour-coded by type -->
+    <div class="px-6 py-5 border-b border-gray-100
+      {% if preset_type == 'cash_in' %}bg-green-50{% elif preset_type == 'cash_out' %}bg-red-50{% else %}bg-gray-50{% endif %}">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center
+          {% if preset_type == 'cash_in' %}bg-green-600{% elif preset_type == 'cash_out' %}bg-red-500{% else %}bg-primary-600{% endif %}">
+          {% if preset_type == 'cash_in' %}
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+          </svg>
+          {% elif preset_type == 'cash_out' %}
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+          </svg>
+          {% else %}
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          {% endif %}
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-gray-900">
+            {% if not is_create %}Edit Entry
+            {% elif preset_type == 'cash_in' %}Add Cash Reimbursement
+            {% elif preset_type == 'cash_out' %}Record Office Payment
+            {% else %}New Cash Entry{% endif %}
+          </h2>
+          <p class="text-xs mt-0.5
+            {% if preset_type == 'cash_in' %}text-green-700
+            {% elif preset_type == 'cash_out' %}text-red-600
+            {% else %}text-gray-400{% endif %}">
+            {% if preset_type == 'cash_in' %}
+              Money being added to the petty cash fund
+            {% elif preset_type == 'cash_out' %}
+              Expense deducted from petty cash
+            {% else %}
+              Choose the entry type below
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="p-6 space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        {{ form.non_field_errors }}
+      </div>
+      {% endif %}
+
+      <!-- Type selector (tabs) -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          Entry Type
+        </label>
+        <div class="flex rounded-xl overflow-hidden border border-gray-200 divide-x divide-gray-200" id="type-tabs">
+          <button type="button" data-type="cash_in"
+                  class="type-tab flex-1 py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2
+                         {% if preset_type == 'cash_in' or form.sale_type.value == 'cash_in' %}bg-green-600 text-white{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+            </svg>
+            Reimbursement
+          </button>
+          <button type="button" data-type="cash_out"
+                  class="type-tab flex-1 py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2
+                         {% if preset_type == 'cash_out' or form.sale_type.value == 'cash_out' %}bg-red-500 text-white{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+            </svg>
+            Payment
+          </button>
+        </div>
+        <!-- Hidden real field -->
+        <select name="sale_type" id="id_sale_type" class="hidden">
+          <option value="cash_in" {% if preset_type == 'cash_in' or form.sale_type.value == 'cash_in' %}selected{% endif %}>Cash In</option>
+          <option value="cash_out" {% if preset_type == 'cash_out' or form.sale_type.value == 'cash_out' %}selected{% endif %}>Cash Out</option>
+        </select>
+        {% if form.sale_type.errors %}
+        <p class="mt-1 text-xs text-red-600">{{ form.sale_type.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Date + Amount -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Date <span class="text-red-400">*</span>
+          </label>
+          {{ form.date }}
+          {% if form.date.errors %}<p class="mt-1 text-xs text-red-600">{{ form.date.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Amount (Rs.) <span class="text-red-400">*</span>
+          </label>
+          {{ form.amount }}
+          {% if form.amount.errors %}<p class="mt-1 text-xs text-red-600">{{ form.amount.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- Purpose -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Description / Purpose <span class="text-red-400">*</span>
+        </label>
+        {{ form.purpose }}
+        {% if form.purpose.errors %}<p class="mt-1 text-xs text-red-600">{{ form.purpose.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Reference Number -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Reference Number <span class="text-gray-400 font-normal normal-case">(optional)</span>
+        </label>
+        {{ form.reference_number }}
+        {% if form.reference_number.errors %}<p class="mt-1 text-xs text-red-600">{{ form.reference_number.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Notes <span class="text-gray-400 font-normal normal-case">(optional)</span>
+        </label>
+        {{ form.notes }}
+        {% if form.notes.errors %}<p class="mt-1 text-xs text-red-600">{{ form.notes.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Bill Image -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          Bill / Receipt Image <span class="text-gray-400 font-normal normal-case">(optional)</span>
+        </label>
+        {{ form.bill_image }}
+        {% if form.bill_image.errors %}<p class="mt-1 text-xs text-red-600">{{ form.bill_image.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+        {% if not is_create and record %}
+        <a href="{% url 'pettycash:sale_detail' record.pk %}"
+           class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </a>
+        {% else %}
+        <a href="{% url 'pettycash:sale_list' %}"
+           class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </a>
+        {% endif %}
+
+        <button type="submit" id="submit-btn"
+                class="px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition active:scale-95
+                       {% if preset_type == 'cash_in' %}bg-green-600 hover:bg-green-700
+                       {% elif preset_type == 'cash_out' %}bg-red-500 hover:bg-red-600
+                       {% else %}bg-primary-600 hover:bg-primary-700{% endif %}">
+          {% if is_create %}Save Entry{% else %}Update Entry{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Type tab switcher */
+const typeSelect  = document.getElementById('id_sale_type');
+const submitBtn   = document.getElementById('submit-btn');
+const cardHeader  = document.querySelector('[class*="border-b border-gray-100"]');
+
+const STYLES = {
+  cash_in:  { tab: 'bg-green-600 text-white', other: 'bg-white text-gray-600 hover:bg-gray-50', btn: 'bg-green-600 hover:bg-green-700' },
+  cash_out: { tab: 'bg-red-500 text-white',   other: 'bg-white text-gray-600 hover:bg-gray-50', btn: 'bg-red-500 hover:bg-red-600' },
+};
+
+document.querySelectorAll('.type-tab').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const type = this.dataset.type;
+    typeSelect.value = type;
+
+    document.querySelectorAll('.type-tab').forEach(t => {
+      const isActive = t.dataset.type === type;
+      const s = STYLES[type];
+      t.className = t.className
+        .replace(/bg-\S+|text-\S+|hover:bg-\S+/g, '')
+        .trim();
+      if (isActive) {
+        t.classList.add(...s.tab.split(' '));
+      } else {
+        t.classList.add(...s.other.split(' '));
+      }
+    });
+
+    // Update submit button colour
+    if (STYLES[type]) {
+      submitBtn.className = submitBtn.className
+        .replace(/bg-\S+|hover:bg-\S+/g, '')
+        .trim();
+      submitBtn.classList.add(...STYLES[type].btn.split(' '));
+    }
+  });
+});
+</script>
+{% endblock %}

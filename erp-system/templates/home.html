@@ -1,0 +1,1487 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home · SENOVKA ERP{% endblock %}
+{% block page_title %}Home{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  :root {
+    --ink:        #0f1117;
+    --ink-soft:   #3a3f4b;
+    --ink-muted:  #6b7280;
+    --ink-ghost:  #9ca3af;
+    --line:       #e5e7eb;
+    --line-soft:  #f3f4f6;
+    --surface:    #ffffff;
+    --surface-2:  #f9fafb;
+    --gold:       #c9a84c;
+    --gold-light: #f5e6c0;
+    --gold-pale:  #fffbef;
+    --teal:       #0f766e;
+    --teal-light: #ccfbf1;
+    --rose:       #be123c;
+    --rose-light: #ffe4e6;
+    --amber:      #b45309;
+    --amber-light:#fef3c7;
+    --blue:       #1d4ed8;
+    --blue-light: #dbeafe;
+    --radius-sm:  8px;
+    --radius:     14px;
+    --radius-lg:  22px;
+    --radius-xl:  32px;
+    --shadow-sm:  0 1px 3px rgba(15,17,23,.07), 0 1px 2px rgba(15,17,23,.05);
+    --shadow:     0 4px 16px rgba(15,17,23,.08), 0 1px 4px rgba(15,17,23,.04);
+    --shadow-lg:  0 12px 40px rgba(15,17,23,.12), 0 4px 12px rgba(15,17,23,.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body { background: var(--surface-2); }
+
+  .erp-wrap {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    padding: 28px 0 48px;
+    max-width: 1360px;
+    margin: 0 auto;
+    position: relative;
+    overflow: visible;
+  }
+
+  .serif { font-family: 'DM Serif Display', serif; }
+
+  /* ── Topbar ─────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 40;
+    overflow: visible;
+  }
+  .topbar-left { display: flex; flex-direction: column; gap: 3px; }
+  .topbar-greeting {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .topbar-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 3vw, 30px);
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .topbar-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .topbar-title a:hover { opacity: .86; }
+  .topbar-sub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  .top-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #141722 0%, #0f1117 100%);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 10px 26px rgba(15,17,23,.28);
+    min-width: 162px;
+  }
+  .top-clock-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
+    background: #22c55e;
+    box-shadow: 0 0 0 6px rgba(34,197,94,.2);
+    animation: pulseClock 1.8s ease infinite;
+    flex-shrink: 0;
+  }
+  .top-clock-main { line-height: 1.1; }
+  .top-clock-time {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+  }
+  .top-clock-meta {
+    margin-top: 3px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.6);
+    font-weight: 600;
+  }
+  @keyframes pulseClock {
+    0%, 100% { transform: scale(1); opacity: .95; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+
+  /* ── Buttons ─────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 9px 17px; border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer; transition: all .18s ease;
+    text-decoration: none; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+  .btn-primary:hover { background: #1e2433; }
+  .btn-ghost {
+    background: var(--surface); color: var(--ink-soft); border-color: var(--line);
+  }
+  .btn-ghost:hover { background: var(--line-soft); }
+  .btn-gold {
+    background: var(--gold); color: #fff; border-color: var(--gold);
+  }
+  .btn-gold:hover { background: #b8963f; }
+  .btn-sm { font-size: 12px; padding: 6px 12px; }
+
+  /* ── Notification Dropdown ───────────────────── */
+  .notif-wrap { position: relative; z-index: 80; }
+  .notif-trigger {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 14px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .18s; color: var(--ink-soft);
+  }
+  .notif-trigger:hover { border-color: var(--ink-ghost); }
+  .notif-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; border-radius: 99px;
+    background: var(--rose); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 0 4px;
+  }
+  .notif-panel {
+    display: none; position: absolute; right: 0; top: calc(100% + 8px);
+    width: 320px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow-lg); z-index: 9999; padding: 14px;
+  }
+  .notif-panel.open { display: block; }
+  .notif-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .notif-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .notif-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+  .notif-item {
+    display: block; padding: 10px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line); text-decoration: none;
+    transition: background .15s;
+  }
+  .notif-item:hover { background: var(--line-soft); }
+  .notif-item-title {
+    font-size: 12px; font-weight: 600;
+    color: var(--rose);
+  }
+  .notif-item-title.amber { color: var(--amber); }
+  .notif-item-msg { font-size: 11px; color: var(--ink-muted); margin-top: 3px; line-height: 1.4; }
+  .notif-empty {
+    padding: 16px 12px; border-radius: var(--radius-sm);
+    border: 1px dashed #86efac; background: #f0fdf4; text-align: center;
+  }
+  .notif-empty p:first-child { font-size: 12px; font-weight: 600; color: #15803d; }
+  .notif-empty p:last-child { font-size: 11px; color: #16a34a; margin-top: 3px; }
+  .notif-cleared {
+    display: none; padding: 16px 12px; border-radius: var(--radius-sm);
+    border: 1px dashed #93c5fd; background: #eff6ff; text-align: center;
+  }
+  .notif-cleared p:first-child { font-size: 12px; font-weight: 600; color: #1d4ed8; }
+  .notif-cleared p:last-child { font-size: 11px; color: #3b82f6; margin-top: 3px; }
+
+  /* ── Hero Banner ─────────────────────────────── */
+  .hero {
+    background: var(--ink);
+    border-radius: var(--radius-xl);
+    padding: 36px 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 80% 120%, rgba(201,168,76,.18) 0%, transparent 60%),
+      radial-gradient(ellipse 400px 300px at -10% -30%, rgba(15,118,110,.22) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 1px;
+    background: var(--gold);
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(26px, 3.5vw, 42px);
+    line-height: 1.1; color: #fff; margin: 0 0 14px;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero-sub {
+    font-size: 14px; line-height: 1.65;
+    color: rgba(255,255,255,.55); max-width: 480px; margin-bottom: 24px;
+  }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .hero-chip {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 12px; border-radius: 99px;
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.14);
+    color: rgba(255,255,255,.75);
+  }
+  .hero-chip.danger { background: rgba(190,18,60,.25); border-color: rgba(190,18,60,.4); color: #fca5a5; }
+  .hero-chip.warn   { background: rgba(180,83,9,.22);  border-color: rgba(180,83,9,.35);  color: #fcd34d; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .hero-snapshot {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    min-width: 220px; flex-shrink: 0;
+  }
+  .snap-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .snap-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(255,255,255,.1);
+  }
+  .snap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .snap-cell {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+  .snap-cell-label { font-size: 10px; color: rgba(255,255,255,.45); margin-bottom: 6px; font-weight: 500; }
+  .snap-cell-val { font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
+  .snap-cell-val.gold { color: var(--gold); }
+  .snap-cell-val.sm { font-size: 15px; }
+  .snap-date { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 14px; }
+
+  /* ── Divider ─────────────────────────────────── */
+  .section-divider {
+    display: flex; align-items: center; gap: 14px;
+    margin: 32px 0 18px;
+  }
+  .section-divider h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px; color: var(--ink); white-space: nowrap;
+  }
+  .section-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--line);
+  }
+
+  /* ── Stat Cards ──────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .stat-card.rose::before   { background: var(--rose); }
+  .stat-card.amber::before  { background: var(--gold); }
+  .stat-card.teal::before   { background: var(--teal); }
+  .stat-card.blue::before   { background: var(--blue); }
+  .stat-card.ink::before    { background: var(--ink); }
+  .stat-card.green::before  { background: #16a34a; }
+
+  .stat-icon {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; margin-bottom: 14px;
+  }
+  .stat-card.rose .stat-icon   { background: var(--rose-light);  color: var(--rose); }
+  .stat-card.amber .stat-icon  { background: var(--gold-light);  color: var(--amber); }
+  .stat-card.teal .stat-icon   { background: var(--teal-light);  color: var(--teal); }
+  .stat-card.blue .stat-icon   { background: var(--blue-light);  color: var(--blue); }
+  .stat-card.ink .stat-icon    { background: var(--line-soft);   color: var(--ink); }
+  .stat-card.green .stat-icon  { background: #dcfce7; color: #16a34a; }
+
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; }
+  .stat-value.md  { font-size: 20px; }
+  .stat-sub { font-size: 11px; color: var(--ink-ghost); margin-top: 5px; }
+
+  /* ── Chart Cards ─────────────────────────────── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media(min-width:900px) {
+    .chart-grid.two-col { grid-template-columns: 2fr 1fr; }
+    .chart-grid.three-col { grid-template-columns: 7fr 5fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 20px; gap: 12px;
+  }
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; color: var(--ink); line-height: 1.2;
+  }
+  .card-sub { font-size: 12px; color: var(--ink-muted); margin-top: 3px; }
+  .chart-wrap { position: relative; }
+
+  /* ── Recent Tasks ────────────────────────────── */
+  .task-item {
+    display: flex; align-items: flex-start; gap: 13px;
+    padding: 13px 0; border-bottom: 1px solid var(--line);
+    text-decoration: none; color: inherit; transition: opacity .15s;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item:hover { opacity: .75; }
+  .task-dot {
+    width: 32px; height: 32px; border-radius: 99px; flex-shrink: 0;
+    background: var(--line-soft); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+    color: var(--ink-soft);
+  }
+  .task-dot svg { width: 15px; height: 15px; }
+  .task-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .task-sub  { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+  .task-time { font-size: 11px; color: var(--ink-ghost); margin-left: auto; flex-shrink: 0; padding-top: 2px; }
+
+  /* ── Low Stock Radar ─────────────────────────── */
+  .stock-item { padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .stock-item:last-child { border-bottom: none; }
+  .stock-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .stock-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .stock-cat  { font-size: 11px; color: var(--ink-muted); }
+  .stock-qty  { font-size: 14px; font-weight: 700; }
+  .stock-qty.out      { color: var(--rose); }
+  .stock-qty.critical { color: var(--amber); }
+  .stock-qty.low      { color: #d97706; }
+  .stock-badge {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 99px;
+    display: inline-block; margin-top: 3px;
+  }
+  .stock-badge.out      { background: var(--rose-light);  color: var(--rose); }
+  .stock-badge.critical { background: var(--amber-light); color: var(--amber); }
+  .stock-badge.low      { background: #fff7ed;             color: #c2410c; }
+  .meter-track { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .meter-fill  { height: 100%; border-radius: 99px; transition: width .4s ease; }
+  .meter-fill.out      { background: var(--rose); }
+  .meter-fill.critical { background: var(--gold); }
+  .meter-fill.low      { background: #f97316; }
+
+  /* ── Top Customers ───────────────────────────── */
+  .customer-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid var(--line);
+  }
+  .customer-row:last-child { border-bottom: none; }
+  .cust-rank {
+    width: 26px; height: 26px; border-radius: 99px; flex-shrink: 0;
+    background: var(--line-soft); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--ink-muted);
+  }
+  .cust-rank.gold-rank { background: var(--gold-pale); border-color: var(--gold-light); color: var(--amber); }
+  .cust-name { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cust-bills { font-size: 11px; color: var(--ink-muted); }
+  .cust-amount { font-size: 13px; font-weight: 700; color: var(--blue); white-space: nowrap; }
+
+  /* ── KPI Banner ──────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; gap: 14px; align-items: flex-start;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .kpi-icon {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .kpi-icon.emerald { background: #d1fae5; color: #059669; }
+  .kpi-icon.rose    { background: var(--rose-light); color: var(--rose); }
+  .kpi-icon.amber   { background: var(--gold-light); color: var(--amber); }
+  .kpi-icon.blue    { background: var(--blue-light); color: var(--blue); }
+  .kpi-body { min-width: 0; flex: 1; }
+  .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1; }
+  .kpi-value.sm { font-size: 17px; }
+  .kpi-sub { font-size: 11px; color: var(--ink-ghost); margin-top: 4px; }
+
+  /* ── Empty States ────────────────────────────── */
+  .empty-state {
+    text-align: center; padding: 32px 16px;
+    border: 1px dashed var(--line); border-radius: var(--radius);
+  }
+  .empty-state.green { border-color: #86efac; background: #f0fdf4; }
+  .empty-state p:first-child { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .empty-state p:last-child  { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+  .empty-state.green p:first-child { color: #15803d; }
+  .empty-state.green p:last-child  { color: #16a34a; }
+
+  /* ── Petty Cash Cells ────────────────────────── */
+  .cash-cell { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .cash-cell:last-child { border-bottom: none; }
+  .cash-icon {
+    width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cash-icon.in  { background: #dcfce7; color: #16a34a; }
+  .cash-icon.out { background: var(--rose-light); color: var(--rose); }
+  .cash-icon.net { background: var(--blue-light); color: var(--blue); }
+  .cash-label { font-size: 12px; color: var(--ink-muted); }
+  .cash-value { font-size: 16px; font-weight: 700; margin-left: auto; }
+  .cash-value.pos  { color: #16a34a; }
+  .cash-value.neg  { color: var(--rose); }
+  .cash-value.neu  { color: var(--blue); }
+
+  /* ── Responsive ──────────────────────────────── */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-snapshot { min-width: unset; }
+    .snap-grid { grid-template-columns: repeat(2,1fr); }
+    .chart-grid.three-col-sm { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 600px) {
+    .hero { padding: 24px 20px; border-radius: var(--radius-lg); }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  }
+
+  /* ── Fade-in ─────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp .5s ease both; }
+  .fade-up:nth-child(1)  { animation-delay:.03s; }
+  .fade-up:nth-child(2)  { animation-delay:.08s; }
+  .fade-up:nth-child(3)  { animation-delay:.13s; }
+  .fade-up:nth-child(4)  { animation-delay:.18s; }
+  .fade-up:nth-child(5)  { animation-delay:.22s; }
+  .fade-up:nth-child(6)  { animation-delay:.26s; }
+  .fade-up:nth-child(7)  { animation-delay:.30s; }
+  .fade-up:nth-child(8)  { animation-delay:.34s; }
+
+  @media (prefers-reduced-motion:reduce) {
+    .fade-up { animation: none; }
+  }
+
+  /* ── Apple-style Toast Notifications ───────── */
+  #toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    width: 340px;
+  }
+
+  .toast-notif {
+    pointer-events: all;
+    background: rgba(28, 28, 30, 0.82);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 18px;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,.38),
+      0 2px 8px rgba(0,0,0,.22),
+      inset 0 1px 0 rgba(255,255,255,.08);
+    padding: 14px 14px 0 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    transform: translateX(calc(100% + 24px));
+    opacity: 0;
+    transition:
+      transform .42s cubic-bezier(.34,1.3,.64,1),
+      opacity .28s ease;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  .toast-notif.toast-in {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  .toast-notif.toast-out {
+    transform: translateX(calc(100% + 24px));
+    opacity: 0;
+    transition:
+      transform .3s cubic-bezier(.55,0,.1,1),
+      opacity .22s ease;
+  }
+
+  .toast-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding-bottom: 13px;
+  }
+
+  .toast-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .toast-icon.kind-low-stock  { background: linear-gradient(135deg,#be123c,#9f1239); }
+  .toast-icon.kind-cheque     { background: linear-gradient(135deg,#b45309,#92400e); }
+  .toast-icon.kind-booking    { background: linear-gradient(135deg,#1d4ed8,#1e40af); }
+  .toast-icon.kind-reminder   { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
+
+  .toast-icon svg { width: 18px; height: 18px; color: #fff; }
+
+  .toast-body { flex: 1; min-width: 0; }
+
+  .toast-app {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(255,255,255,.45);
+    margin-bottom: 3px;
+  }
+
+  .toast-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: #fff; line-height: 1.3;
+    margin-bottom: 3px;
+  }
+
+  .toast-msg {
+    font-size: 11px; color: rgba(255,255,255,.55);
+    line-height: 1.45;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .toast-close {
+    width: 20px; height: 20px; border-radius: 99px;
+    background: rgba(255,255,255,.1);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+    transition: background .15s;
+    padding: 0;
+  }
+  .toast-close:hover { background: rgba(255,255,255,.2); }
+  .toast-close svg { width: 10px; height: 10px; color: rgba(255,255,255,.7); }
+
+  .toast-progress {
+    height: 2px;
+    background: rgba(255,255,255,.08);
+    margin: 0 -14px;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .toast-progress-bar {
+    height: 100%;
+    border-radius: 0;
+    transition: width linear;
+  }
+  .kind-low-stock  .toast-progress-bar { background: #f87171; }
+  .kind-cheque     .toast-progress-bar { background: #fcd34d; }
+  .kind-booking    .toast-progress-bar { background: #93c5fd; }
+  .kind-reminder   .toast-progress-bar { background: #c4b5fd; }
+
+  .toast-actions {
+    display: flex;
+    border-top: 1px solid rgba(255,255,255,.07);
+    margin: 0 -14px;
+  }
+  .toast-action {
+    flex: 1; padding: 10px 12px;
+    font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,.55);
+    background: none; border: none;
+    cursor: pointer; text-align: center;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .toast-action:first-child {
+    border-right: 1px solid rgba(255,255,255,.07);
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  .toast-action:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .toast-action:first-child:hover { color: #93c5fd; }
+</style>
+
+<div class="erp-wrap">
+
+  <!-- ── Topbar ─────────────────────────────────── -->
+  <div class="topbar fade-up">
+    <div class="topbar-left">
+      <span class="topbar-greeting">Live Operations</span>
+      <h1 class="topbar-title"><a href="{% url 'home' %}" aria-label="Go to home">SENOVKA <em style="font-style:italic;color:var(--gold)">ERP</em> Dashboard</a></h1>
+      <p class="topbar-sub">{{ today|date:'l, d F Y' }}</p>
+    </div>
+    <div class="topbar-actions">
+      <a href="{% url 'product_create' %}" class="btn btn-primary">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Product
+      </a>
+      <a href="{% url 'customer_create' %}" class="btn btn-ghost">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+        Add Customer
+      </a>
+
+      <!-- Notification -->
+      <div class="notif-wrap">
+        <button class="notif-trigger" id="home-notification-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Alerts
+          {% if home_notifications_count %}
+          <span class="notif-badge" id="home-alert-badge">{{ home_notifications_count }}</span>
+          {% endif %}
+        </button>
+        <div class="notif-panel" id="home-notification-panel">
+          <div class="notif-header">
+            <span class="notif-title">Notifications</span>
+            <div style="display:flex;gap:6px;">
+              <a href="{% url 'all_logs' %}" class="btn btn-ghost btn-sm">All logs</a>
+              <button id="home-clear-notifications" type="button" class="btn btn-ghost btn-sm">Clear today</button>
+            </div>
+          </div>
+          <div class="notif-list" id="home-notification-list">
+            {% for notice in home_notifications %}
+            <a href="{{ notice.url }}" class="notif-item" data-home-notice-item="true" data-home-notice-id="{{ notice.id }}">
+              <p class="notif-item-title {% if notice.kind == 'low_stock' or notice.kind == 'task_alert' or notice.kind == 'reminder_alert' or notice.kind == 'reminder_overdue' %}amber{% endif %}">{{ notice.title }}</p>
+              <p class="notif-item-msg">{{ notice.message }}</p>
+            </a>
+            {% empty %}
+            <div class="notif-empty" id="home-notification-empty">
+              <p>No alerts right now</p>
+              <p>Stock, cheque maturity, pending-order, and task due-date alerts will appear here.</p>
+            </div>
+            {% endfor %}
+            <div class="notif-cleared" id="home-notification-cleared">
+              <p>Notifications cleared for today</p>
+              <p>Alerts will appear again tomorrow if conditions still match.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Hero ──────────────────────────────────── -->
+  <div class="hero fade-up">
+    <div>
+      <div class="hero-eyebrow">Control Center</div>
+      <h1>Build. Bill. <em>Balance.</em><br>All in one launchpad.</h1>
+      <p class="hero-sub">Monitor inventory risk, track what changed recently, and jump to high-impact actions — without digging through menus.</p>
+      <div class="hero-chips">
+        <span class="hero-chip">{{ recent_tasks_count }} recent task{{ recent_tasks_count|pluralize }}</span>
+        <span class="hero-chip danger">{{ low_stock_count }} low stock</span>
+        <span class="hero-chip warn">{{ out_of_stock_count }} out of stock</span>
+        {% if cheque_alert_count %}<span class="hero-chip warn">{{ cheque_alert_count }} cheque{{ cheque_alert_count|pluralize }} due</span>{% endif %}
+        {% if booking_alert_count %}<span class="hero-chip warn">{{ booking_alert_count }} order{{ booking_alert_count|pluralize }} due</span>{% endif %}
+        {% if task_alert_count %}<span class="hero-chip warn">{{ task_alert_count }} task{{ task_alert_count|pluralize }} due</span>{% endif %}
+        {% if reminder_alert_count %}<span class="hero-chip warn">{{ reminder_alert_count }} reminder{{ reminder_alert_count|pluralize }}</span>{% endif %}
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'product_list' %}" class="btn btn-gold">Manage Products</a>
+        <a href="{% url 'all_logs' %}" class="btn" style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.65);border-color:rgba(255,255,255,.1);">All Logs</a>
+      </div>
+    </div>
+    <div class="hero-snapshot">
+      <div class="snap-label">Today's Snapshot</div>
+      <div class="snap-grid">
+        <div class="snap-cell">
+          <div class="snap-cell-label">New Customers</div>
+          <div class="snap-cell-val">{{ new_customers_today }}</div>
+        </div>
+        <div class="snap-cell">
+          <div class="snap-cell-label">Total Customers</div>
+          <div class="snap-cell-val">{{ total_customers }}</div>
+        </div>
+        <div class="snap-cell">
+          <div class="snap-cell-label">Low Stock</div>
+          <div class="snap-cell-val gold sm">{{ low_stock_count }}</div>
+        </div>
+        <div class="snap-cell">
+          <div class="snap-cell-label">Total Products</div>
+          <div class="snap-cell-val gold sm">{{ total_products }}</div>
+        </div>
+      </div>
+      <div class="snap-date">Updated {{ today|date:'d M Y' }}</div>
+    </div>
+  </div>
+
+  <!-- ── Inventory Stats ────────────────────────── -->
+  <div class="section-divider fade-up"><h2>Inventory Risk</h2></div>
+  <div class="stats-grid">
+    {% for card in '' %}{% endfor %}
+    <div class="stat-card rose fade-up">
+      <div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+      <div class="stat-label">Low Stock</div>
+      <div class="stat-value">{{ low_stock_count }}</div>
+      <div class="stat-sub">Below {{ low_stock_threshold }} qty threshold</div>
+    </div>
+    <div class="stat-card amber fade-up">
+      <div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+      <div class="stat-label">Critical Stock</div>
+      <div class="stat-value">{{ critical_stock_count }}</div>
+      <div class="stat-sub">Qty between 1 and 3</div>
+    </div>
+    <div class="stat-card rose fade-up">
+      <div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div>
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value">{{ out_of_stock_count }}</div>
+      <div class="stat-sub">Needs replenishment</div>
+    </div>
+    <div class="stat-card green fade-up">
+      <div class="stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div class="stat-label">Healthy Stock</div>
+      <div class="stat-value">{{ healthy_stock_count }}</div>
+      <div class="stat-sub">Above threshold</div>
+    </div>
+  </div>
+
+  <!-- ── Billing KPIs ───────────────────────────── -->
+  <div class="section-divider fade-up"><h2>Billing &amp; Revenue</h2></div>
+  <div class="kpi-grid">
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon emerald">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">This Month's Revenue</div>
+        <div class="kpi-value sm">Rs.{{ billing_month_revenue|floatformat:0 }}</div>
+        <div class="kpi-sub">Completed bills only</div>
+      </div>
+    </div>
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon rose">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Pending Bills</div>
+        <div class="kpi-value">{{ pending_bills_count }}</div>
+        <div class="kpi-sub">Rs.{{ pending_bills_amount|floatformat:0 }} outstanding</div>
+      </div>
+    </div>
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon blue">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Pending Bookings</div>
+        <div class="kpi-value">{{ pending_bookings_count }}</div>
+        <div class="kpi-sub">Awaiting dispatch</div>
+      </div>
+    </div>
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon {% if petty_cash_month_net >= 0 %}emerald{% else %}rose{% endif %}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2M5 9h14l-1 10H6L5 9zm4 4h.01M15 13h.01"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Petty Cash Net</div>
+        <div class="kpi-value sm">{% if petty_cash_month_net >= 0 %}+{% endif %}Rs.{{ petty_cash_month_net|floatformat:0 }}</div>
+        <div class="kpi-sub">In {{ petty_cash_month_in|floatformat:0 }} · Out {{ petty_cash_month_out|floatformat:0 }}</div>
+      </div>
+    </div>
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon amber">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Total Customers</div>
+        <div class="kpi-value">{{ total_customers }}</div>
+        <div class="kpi-sub">Active profiles</div>
+      </div>
+    </div>
+    <div class="kpi-card fade-up">
+      <div class="kpi-icon blue">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Total Products</div>
+        <div class="kpi-value">{{ total_products }}</div>
+        <div class="kpi-sub">In catalogue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Charts ──────────────────────────────────── -->
+  <div class="section-divider fade-up"><h2>Analytics</h2></div>
+
+  <!-- Billing Revenue + Top Customers -->
+  <div class="chart-grid two-col fade-up" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Billing Revenue</div>
+          <div class="card-sub">Monthly completed-bill total · last 6 months</div>
+        </div>
+        <a href="{% url 'billing:bill_list' %}" class="btn btn-ghost btn-sm">View bills</a>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="billingRevenueChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Top Customers</div>
+          <div class="card-sub">By total billing revenue (all time)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="topCustomersChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Petty Cash + Stock Health + Payment Mix -->
+  <div class="chart-grid three-col-sm fade-up" style="grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Petty Cash Trend</div>
+          <div class="card-sub">Monthly in, out &amp; net · 6 months</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="pettyCashChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Stock Health</div>
+          <div class="card-sub">Current distribution by risk</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="stockMixChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Payment Methods</div>
+          <div class="card-sub">Cash · Cheque · Balance (all time)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="payMethodChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── Bottom: Recent Tasks + Low Stock ──────── -->
+  <div class="chart-grid three-col fade-up">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Recent Tasks</div>
+          <div class="card-sub">Latest workflow events</div>
+        </div>
+        <a href="{% url 'all_logs' %}" class="btn btn-ghost btn-sm">View all logs</a>
+      </div>
+      {% for task in recent_tasks %}
+      <a href="{{ task.url }}" class="task-item">
+        <div class="task-dot">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="task-name">{{ task.title }}</div>
+          <div class="task-sub">{{ task.subtitle }}</div>
+        </div>
+        <span class="task-time">{{ task.timestamp|timesince }} ago</span>
+      </a>
+      {% empty %}
+      <div class="empty-state"><p>No recent tasks yet</p><p>Add customers or products to populate this section.</p></div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Low Stock Radar</div>
+          <div class="card-sub">Top {{ low_stock_limit }} products closest to stockout</div>
+        </div>
+        <a href="{% url 'product_list' %}" class="btn btn-ghost btn-sm">Products</a>
+      </div>
+      {% for item in low_stock_items %}
+      <div class="stock-item">
+        <div class="stock-row">
+          <div>
+            <div class="stock-name">{{ item.name }}</div>
+            <div class="stock-cat">{{ item.category }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stock-qty {{ item.severity }}">{{ item.qty }}</div>
+            <span class="stock-badge {{ item.severity }}">{{ item.severity_label }}</span>
+          </div>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill {{ item.severity }}" style="width:{{ item.meter_percent }}%;"></div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state green"><p>All stock levels healthy</p><p>No products below the low-stock threshold.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Apple-style Toast Stack ────────────────── -->
+<div id="toast-stack" aria-live="polite" aria-label="Notifications"></div>
+
+<!-- ── Data for charts ─────────────────────────── -->
+{{ home_notifications|json_script:"home-notifications-data" }}
+{{ chart_labels|json_script:"home-chart-labels" }}
+{{ petty_in_values|json_script:"home-petty-in-values" }}
+{{ petty_out_values|json_script:"home-petty-out-values" }}
+{{ petty_net_values|json_script:"home-petty-net-values" }}
+{{ stock_mix_values|json_script:"home-stock-mix-values" }}
+{{ billing_revenue_values|json_script:"home-billing-revenue" }}
+{{ top_customer_names|json_script:"home-top-cust-names" }}
+{{ top_customer_amounts|json_script:"home-top-cust-amounts" }}
+{{ pay_method_values|json_script:"home-pay-method-values" }}
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  /* ── Shared state ──────────────────────────── */
+  const alertCount  = Number("{{ home_notifications_count|default:'0' }}");
+  const soundPath   = "{% static notification_sound_path %}";
+  const todayKey    = new Date().toISOString().slice(0, 10);
+  const storageKey  = `home-alert-cleared-ids-${todayKey}`;
+  const notifSound  = new Audio(soundPath);
+  let clearedIds    = new Set();
+
+  try {
+    const p = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    if (Array.isArray(p)) clearedIds = new Set(p);
+  } catch (_) {}
+
+  function persistIds() { localStorage.setItem(storageKey, JSON.stringify([...clearedIds])); }
+
+  /* ── Dropdown panel ────────────────────────── */
+  const toggleBtn   = document.getElementById('home-notification-toggle');
+  const panel       = document.getElementById('home-notification-panel');
+  const clearBtn    = document.getElementById('home-clear-notifications');
+  const badge       = document.getElementById('home-alert-badge');
+  const emptyEl     = document.getElementById('home-notification-empty');
+  const clearedEl   = document.getElementById('home-notification-cleared');
+  const noticeItems = Array.from(document.querySelectorAll('[data-home-notice-item]'));
+
+  function getNoticeKey(el) {
+    const id = (el.dataset.homeNoticeId || '').trim();
+    if (id) return `id:${id}`;
+    const href  = (el.getAttribute('href') || '').trim();
+    const title = (el.querySelector('.notif-item-title')?.textContent || '').trim();
+    const msg   = (el.querySelector('.notif-item-msg')?.textContent || '').trim();
+    return `fallback:${href}|${title}|${msg}`;
+  }
+
+  function getVisibleIds() {
+    return noticeItems
+      .filter(el => el.style.display !== 'none')
+      .map(getNoticeKey)
+      .filter(Boolean);
+  }
+
+  function applyClear() {
+    let visible = 0;
+    noticeItems.forEach(el => {
+      const key  = getNoticeKey(el);
+      const hide = Boolean(key) && clearedIds.has(key);
+      el.style.display = hide ? 'none' : '';
+      if (!hide) visible++;
+    });
+    if (emptyEl)   emptyEl.style.display  = visible === 0 ? 'block' : 'none';
+    if (clearedEl) clearedEl.style.display = (alertCount > 0 && visible === 0) ? 'block' : 'none';
+    if (badge) {
+      badge.style.display = visible === 0 ? 'none' : '';
+      if (visible > 0) badge.textContent = String(visible);
+    }
+    if (clearBtn) {
+      clearBtn.disabled      = visible === 0;
+      clearBtn.style.opacity = visible === 0 ? '0.5' : '1';
+    }
+    return visible;
+  }
+
+  if (toggleBtn && panel) {
+    toggleBtn.addEventListener('click', () => {
+      panel.classList.toggle('open');
+      toggleBtn.setAttribute('aria-expanded', String(panel.classList.contains('open')));
+    });
+    document.addEventListener('click', e => {
+      if (panel.classList.contains('open') && !panel.contains(e.target) && !toggleBtn.contains(e.target)) {
+        panel.classList.remove('open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function clearAllToday() {
+    noticeItems.forEach(el => {
+      if (!el.classList.contains('hidden')) {
+        const key = getNoticeKey(el);
+        if (key) clearedIds.add(key);
+      }
+    });
+    persistIds();
+    applyClear();
+    notifSound.pause();
+    notifSound.currentTime = 0;
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearAllToday);
+  }
+
+  /* ── Apple-style Toast System ──────────────── */
+  const TOAST_DURATION   = 5800;   // ms before auto-dismiss
+  const TOAST_GAP_DELAY  = 700;    // ms between each toast appearing
+  const toastStack       = document.getElementById('toast-stack');
+
+  const KIND_META = {
+    low_stock:    { cls: 'kind-low-stock', label: 'Stock Alert',   icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' },
+    cheque_alert: { cls: 'kind-cheque',    label: 'Cheque Alert',  icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>' },
+    booking_alert:{ cls: 'kind-booking',   label: 'Booking Alert', icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' },
+    reminder_alert:   { cls: 'kind-reminder', label: 'Reminder', icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>' },
+    reminder_overdue: { cls: 'kind-reminder', label: 'Reminder Overdue', icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>' },
+  };
+
+  function createToast(notice) {
+    const meta    = KIND_META[notice.kind] || KIND_META['booking_alert'];
+    const toast   = document.createElement('div');
+    toast.className = `toast-notif ${meta.cls}`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+      <div class="toast-inner">
+        <div class="toast-icon ${meta.cls}">${meta.icon}</div>
+        <div class="toast-body">
+          <div class="toast-app">SENOVKA ERP · ${meta.label}</div>
+          <div class="toast-title">${notice.title}</div>
+          <div class="toast-msg">${notice.message}</div>
+        </div>
+        <button class="toast-close" aria-label="Dismiss">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="toast-progress"><div class="toast-progress-bar" style="width:100%"></div></div>
+      <div class="toast-actions">
+        <a class="toast-action" href="${notice.url}">View</a>
+        <button class="toast-action toast-clear-btn">Clear Today</button>
+      </div>
+    `;
+    return toast;
+  }
+
+  function dismissToast(toast, onDone) {
+    toast.classList.remove('toast-in');
+    toast.classList.add('toast-out');
+    toast.addEventListener('transitionend', () => {
+      toast.remove();
+      if (onDone) onDone();
+    }, { once: true });
+  }
+
+  function showToast(notice, delay) {
+    setTimeout(() => {
+      if (!toastStack) return;
+      const noticeKey = `id:${notice.id}`;
+      if (clearedIds.has(noticeKey)) return;
+
+      const toast = createToast(notice);
+      toastStack.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { toast.classList.add('toast-in'); });
+      });
+
+      const progressBar = toast.querySelector('.toast-progress-bar');
+      let startTime     = null;
+      let timerHandle   = null;
+      let dismissed     = false;
+
+      function startTimer() {
+        startTime = performance.now();
+        timerHandle = requestAnimationFrame(function tick(now) {
+          if (dismissed) return;
+          const elapsed  = now - startTime;
+          const fraction = Math.max(0, 1 - elapsed / TOAST_DURATION);
+          progressBar.style.width = (fraction * 100) + '%';
+          if (elapsed >= TOAST_DURATION) {
+            dismissed = true;
+            dismissToast(toast);
+          } else {
+            timerHandle = requestAnimationFrame(tick);
+          }
+        });
+      }
+
+      function pauseTimer() { cancelAnimationFrame(timerHandle); }
+      function resumeTimer() { startTime = performance.now() - ((1 - parseFloat(progressBar.style.width) / 100) * TOAST_DURATION); startTimer(); }
+
+      toast.addEventListener('mouseenter', pauseTimer);
+      toast.addEventListener('mouseleave', resumeTimer);
+      startTimer();
+
+      toast.querySelector('.toast-close').addEventListener('click', () => {
+        dismissed = true;
+        cancelAnimationFrame(timerHandle);
+        dismissToast(toast);
+      });
+
+      toast.querySelector('.toast-clear-btn').addEventListener('click', () => {
+        dismissed = true;
+        cancelAnimationFrame(timerHandle);
+        dismissToast(toast);
+        clearAllToday();
+        Array.from(toastStack.querySelectorAll('.toast-notif')).forEach(t => {
+          if (t !== toast) dismissToast(t);
+        });
+      });
+
+    }, delay);
+  }
+
+  async function playSound(times = 3) {
+    for (let i = 0; i < times; i++) {
+      notifSound.currentTime = 0;
+      try { await notifSound.play(); await new Promise(r => { notifSound.onended = r; }); }
+      catch (_) { break; }
+    }
+  }
+
+  /* ── Boot ──────────────────────────────────── */
+  let rawNotifications = [];
+  try {
+    rawNotifications = JSON.parse(document.getElementById('home-notifications-data')?.textContent || '[]');
+  } catch (_) {}
+
+  const visible = applyClear();
+  const toShow  = rawNotifications.filter(n => !clearedIds.has(`id:${n.id}`));
+
+  if (toShow.length > 0) {
+    const sig      = toShow.map(n => n.id).sort().join('|');
+    const soundKey = `home-alert-sound-${todayKey}-${sig}`;
+
+    toShow.forEach((notice, i) => showToast(notice, 900 + i * TOAST_GAP_DELAY));
+
+    if (sig && !sessionStorage.getItem(soundKey)) {
+      setTimeout(() => { void playSound(3); }, 600);
+      sessionStorage.setItem(soundKey, 'played');
+    }
+  }
+})();
+
+
+/* ── Charts ──────────────────────────────────── */
+(function () {
+  if (typeof Chart === 'undefined') return;
+
+  function getData(id) {
+    try { return JSON.parse(document.getElementById(id)?.textContent || '[]'); }
+    catch (_) { return []; }
+  }
+
+  const labels           = getData('home-chart-labels');
+  const pettyIn          = getData('home-petty-in-values');
+  const pettyOut         = getData('home-petty-out-values');
+  const pettyNet         = getData('home-petty-net-values');
+  const stockMix         = getData('home-stock-mix-values');
+  const billingRevenue   = getData('home-billing-revenue');
+  const topCustNames     = getData('home-top-cust-names');
+  const topCustAmounts   = getData('home-top-cust-amounts');
+  const payMethodValues  = getData('home-pay-method-values');
+
+  const font = "'DM Sans', sans-serif";
+  const gridColor = 'rgba(15,17,23,.06)';
+
+  const baseScaleOpts = {
+    grid: { color: gridColor, drawBorder: false },
+    ticks: { font: { family: font, size: 11 }, color: '#6b7280', padding: 6 },
+    border: { display: false }
+  };
+
+  Chart.defaults.font.family = font;
+
+  /* Stock Mix Doughnut */
+  const dCanvas = document.getElementById('stockMixChart');
+  if (dCanvas) {
+    new Chart(dCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Healthy', 'Low', 'Critical', 'Out of Stock'],
+        datasets: [{
+          data: stockMix,
+          backgroundColor: ['#0f766e', '#c9a84c', '#f97316', '#be123c'],
+          borderColor: '#ffffff', borderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+          legend: {
+            position: 'bottom', align: 'center',
+            labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true, padding: 14, font: { family: font, size: 11 }, color: '#3a3f4b' }
+          },
+          tooltip: {
+            backgroundColor: '#0f1117', titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+            padding: 12, cornerRadius: 10, titleFont: { size: 12, weight: '600', family: font }, bodyFont: { size: 12, family: font },
+          }
+        }
+      }
+    });
+  }
+
+  /* Petty Cash Trend */
+  const pCanvas = document.getElementById('pettyCashChart');
+  if (pCanvas) {
+    new Chart(pCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Cash In',
+            data: pettyIn,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22,163,74,.08)',
+            fill: false, tension: 0.4,
+            borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
+            pointBackgroundColor: '#16a34a', pointBorderColor: '#fff', pointBorderWidth: 2,
+          },
+          {
+            label: 'Cash Out',
+            data: pettyOut,
+            borderColor: '#be123c',
+            backgroundColor: 'rgba(190,18,60,.07)',
+            fill: false, tension: 0.4,
+            borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
+            pointBackgroundColor: '#be123c', pointBorderColor: '#fff', pointBorderWidth: 2,
+          },
+          {
+            label: 'Net',
+            data: pettyNet,
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29,78,216,.08)',
+            fill: true, tension: 0.35,
+            borderWidth: 2.5, borderDash: [4, 3],
+            pointRadius: 3, pointHoverRadius: 5,
+            pointBackgroundColor: '#1d4ed8', pointBorderColor: '#fff', pointBorderWidth: 2,
+          },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top', align: 'end',
+            labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true, padding: 16, font: { family: font, size: 11 }, color: '#3a3f4b' }
+          },
+          tooltip: {
+            backgroundColor: '#0f1117', titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+            padding: 12, cornerRadius: 10, titleFont: { size: 12, weight: '600', family: font }, bodyFont: { size: 12, family: font },
+          }
+        },
+        scales: {
+          y: { ...baseScaleOpts, beginAtZero: true, ticks: { ...baseScaleOpts.ticks, callback: v => 'Rs.' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v) } },
+          x: { ...baseScaleOpts },
+        }
+      }
+    });
+  }
+
+  /* Billing Revenue Bar Chart */
+  const brCanvas = document.getElementById('billingRevenueChart');
+  if (brCanvas) {
+    new Chart(brCanvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue',
+          data: billingRevenue,
+          backgroundColor: 'rgba(201,168,76,.75)',
+          borderColor: '#c9a84c',
+          borderWidth: 2,
+          borderRadius: 6,
+          borderSkipped: false,
+          hoverBackgroundColor: '#c9a84c',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f1117', titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+            padding: 12, cornerRadius: 10,
+            titleFont: { size: 12, weight: '600', family: font }, bodyFont: { size: 12, family: font },
+            callbacks: { label: ctx => ' Rs.' + Number(ctx.raw).toLocaleString() }
+          }
+        },
+        scales: {
+          y: { ...baseScaleOpts, beginAtZero: true, ticks: { ...baseScaleOpts.ticks, callback: v => 'Rs.' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) } },
+          x: { ...baseScaleOpts },
+        }
+      }
+    });
+  }
+
+  /* Top Customers Horizontal Bar */
+  const tcCanvas = document.getElementById('topCustomersChart');
+  if (tcCanvas && topCustNames.length) {
+    new Chart(tcCanvas, {
+      type: 'bar',
+      data: {
+        labels: topCustNames,
+        datasets: [{
+          label: 'Revenue',
+          data: topCustAmounts,
+          backgroundColor: [
+            'rgba(29,78,216,.8)', 'rgba(15,118,110,.75)', 'rgba(201,168,76,.75)',
+            'rgba(190,18,60,.7)', 'rgba(124,58,237,.7)',
+          ],
+          borderRadius: 5,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f1117', titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+            padding: 12, cornerRadius: 10,
+            titleFont: { size: 12, weight: '600', family: font }, bodyFont: { size: 12, family: font },
+            callbacks: { label: ctx => ' Rs.' + Number(ctx.raw).toLocaleString() }
+          }
+        },
+        scales: {
+          x: { ...baseScaleOpts, beginAtZero: true, ticks: { ...baseScaleOpts.ticks, callback: v => 'Rs.' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) } },
+          y: { ...baseScaleOpts, ticks: { ...baseScaleOpts.ticks, font: { family: font, size: 11 } } },
+        }
+      }
+    });
+  }
+
+  /* Payment Method Doughnut */
+  const pmCanvas = document.getElementById('payMethodChart');
+  if (pmCanvas) {
+    new Chart(pmCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Cash', 'Cheque', 'Credit Balance'],
+        datasets: [{
+          data: payMethodValues,
+          backgroundColor: ['#0f766e', '#c9a84c', '#1d4ed8'],
+          borderColor: '#ffffff', borderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom', align: 'center',
+            labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, useBorderRadius: true, padding: 12, font: { family: font, size: 11 }, color: '#3a3f4b' }
+          },
+          tooltip: {
+            backgroundColor: '#0f1117', titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+            padding: 12, cornerRadius: 10,
+            titleFont: { size: 12, weight: '600', family: font }, bodyFont: { size: 12, family: font },
+            callbacks: { label: ctx => ' Rs.' + Number(ctx.raw).toLocaleString() }
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

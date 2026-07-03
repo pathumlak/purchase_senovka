@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Purchase - ERP System{% endblock %}
+{% block page_title %}Delete Purchase{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-8 text-center">
+            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-5">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Delete Purchase Record</h2>
+            <p class="text-sm text-gray-600 mb-1">
+                You are about to permanently delete invoice
+                <span class="font-semibold text-gray-900">{{ purchase.invoice_number }}</span>
+                from <span class="font-semibold text-gray-900">{{ purchase.supplier_name }}</span>.
+            </p>
+            <p class="text-sm text-gray-500">This action cannot be undone.</p>
+
+            <div class="mt-5 text-left bg-gray-50 rounded-lg p-4 space-y-1.5 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">Material:</span> <span class="font-medium text-gray-900">{{ purchase.material_name }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Date:</span> <span class="font-medium text-gray-900">{{ purchase.received_date|date:"d M Y" }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Quantity:</span> <span class="font-medium text-gray-900">{{ purchase.quantity }} {{ purchase.unit_type }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Total Amount:</span> <span class="font-bold text-red-700">Rs. {{ purchase.total_amount|floatformat:2 }}</span></div>
+            </div>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="flex gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <a href="{% url 'purchasing:purchase_list' %}"
+                   class="flex-1 text-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+                    Yes, Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

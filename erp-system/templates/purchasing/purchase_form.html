@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - ERP System{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Back link -->
+    <a href="{% url 'purchasing:purchase_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Back to Purchases
+    </a>
+
+    <form method="POST" id="purchase-form" novalidate>
+        {% csrf_token %}
+
+        <!-- ─ Invoice & Supplier ─ -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Invoice &amp; Supplier Details
+                </h3>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="{{ form.invoice_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Invoice Number <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.invoice_number }}
+                    {% if form.invoice_number.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.invoice_number.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.received_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Received Date <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.received_date }}
+                    {% if form.received_date.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.received_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="{{ form.supplier_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Supplier Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.supplier_name }}
+                    {% if form.supplier_name.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.supplier_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Material & Pricing ─ -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                    Material &amp; Pricing
+                </h3>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="sm:col-span-2">
+                    <label for="{{ form.material_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Material Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.material_name }}
+                    {% if form.material_name.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.material_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Quantity (Bill) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.quantity }}
+                    {% if form.quantity.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.quantity.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.unit_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Unit <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.unit_type }}
+                    {% if form.unit_type.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.unit_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.unit_price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Unit Price (Rs.) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.unit_price }}
+                    {% if form.unit_price.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ form.unit_price.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Total Amount (Auto)</label>
+                    <div id="total-display" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-primary-700">
+                        Rs. <span id="total-value">{% if purchase %}{{ purchase.total_amount|floatformat:2 }}{% else %}0.00{% endif %}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-400">Quantity × Unit Price</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Scale Weight Verification ─ -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                    Digital Scale Verification
+                    <span class="ml-1 text-xs font-normal text-gray-400">(optional)</span>
+                </h3>
+                <p class="mt-1 text-xs text-gray-500">Enter the actual weight measured on the scale to compare with the supplier bill quantity.</p>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label for="{{ form.scale_weight.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Scale Weight (Actual)
+                        </label>
+                        {{ form.scale_weight }}
+                        {% if form.scale_weight.errors %}
+                        <p class="mt-1 text-xs text-red-600">{{ form.scale_weight.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <!-- Live comparison panel -->
+                        <div id="weight-comparison" class="hidden p-4 rounded-lg border text-sm space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Bill Qty:</span>
+                                <span id="cmp-bill" class="font-semibold text-gray-800">—</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Scale Weight:</span>
+                                <span id="cmp-scale" class="font-semibold text-gray-800">—</span>
+                            </div>
+                            <div class="border-t border-current border-opacity-20 pt-1 flex justify-between">
+                                <span class="text-gray-500">Difference:</span>
+                                <span id="cmp-diff" class="font-bold">—</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Status:</span>
+                                <span id="cmp-status" class="font-semibold">—</span>
+                            </div>
+                        </div>
+                        <div id="weight-placeholder" class="p-4 rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400 text-center">
+                            Enter scale weight to compare
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    {{ form.weight_verified }}
+                    <label for="{{ form.weight_verified.id_for_label }}" class="text-sm font-medium text-gray-700 cursor-pointer select-none">
+                        {{ form.weight_verified.label }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Notes ─ -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-900">Notes</h3>
+            </div>
+            <div class="p-6">
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <p class="mt-1 text-xs text-red-600">{{ form.notes.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex items-center justify-end gap-3 pb-4">
+            <a href="{% url 'purchasing:purchase_list' %}"
+               class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition shadow-sm">
+                {% if is_create %}Save Purchase{% else %}Update Purchase{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const qtyInput   = document.getElementById('id_quantity');
+    const priceInput = document.getElementById('id_unit_price');
+    const unitSel    = document.getElementById('id_unit_type');
+    const scaleInput = document.getElementById('id_scale_weight');
+    const totalSpan  = document.getElementById('total-value');
+    const cmpPanel   = document.getElementById('weight-comparison');
+    const cmpPlaceholder = document.getElementById('weight-placeholder');
+
+    function calcTotal() {
+        const qty   = parseFloat(qtyInput.value)   || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        totalSpan.textContent = (qty * price).toFixed(2);
+    }
+
+    function updateComparison() {
+        const qty   = parseFloat(qtyInput.value)   || null;
+        const scale = parseFloat(scaleInput.value) || null;
+        const unit  = unitSel.value || 'KG';
+
+        if (qty === null || scale === null || isNaN(qty) || isNaN(scale)) {
+            cmpPanel.classList.add('hidden');
+            cmpPlaceholder.classList.remove('hidden');
+            return;
+        }
+
+        const diff = scale - qty;
+        const pct  = qty !== 0 ? ((diff / qty) * 100).toFixed(2) : '—';
+
+        document.getElementById('cmp-bill').textContent  = qty.toFixed(3)   + ' ' + unit;
+        document.getElementById('cmp-scale').textContent = scale.toFixed(3) + ' ' + unit;
+        document.getElementById('cmp-diff').textContent  = (diff >= 0 ? '+' : '') + diff.toFixed(3) + ' ' + unit + (pct !== '—' ? ' (' + pct + '%)' : '');
+
+        const statusEl = document.getElementById('cmp-status');
+        if (Math.abs(diff) < 0.001) {
+            cmpPanel.className = 'p-4 rounded-lg border border-green-200 bg-green-50 text-sm space-y-1 text-green-800';
+            document.getElementById('cmp-diff').className = 'font-bold text-green-700';
+            statusEl.textContent = 'Match';
+            statusEl.className = 'font-semibold text-green-700';
+        } else if (diff < 0) {
+            cmpPanel.className = 'p-4 rounded-lg border border-red-200 bg-red-50 text-sm space-y-1 text-red-800';
+            document.getElementById('cmp-diff').className = 'font-bold text-red-600';
+            statusEl.textContent = 'Short weight';
+            statusEl.className = 'font-semibold text-red-600';
+        } else {
+            cmpPanel.className = 'p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm space-y-1 text-amber-800';
+            document.getElementById('cmp-diff').className = 'font-bold text-amber-600';
+            statusEl.textContent = 'Excess weight';
+            statusEl.className = 'font-semibold text-amber-600';
+        }
+
+        cmpPanel.classList.remove('hidden');
+        cmpPlaceholder.classList.add('hidden');
+    }
+
+    qtyInput.addEventListener('input', function () { calcTotal(); updateComparison(); });
+    priceInput.addEventListener('input', calcTotal);
+    unitSel.addEventListener('change', updateComparison);
+    scaleInput.addEventListener('input', updateComparison);
+
+    // Initialize on edit
+    calcTotal();
+    updateComparison();
+})();
+</script>
+{% endblock %}

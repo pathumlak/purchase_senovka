@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body  { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 20px; }
+  h1    { font-size: 15px; margin: 0 0 2px; }
+  .meta { font-size: 8.5px; color: #666; margin-bottom: 12px; }
+  .filters { font-size: 8.5px; color: #444; margin-bottom: 10px; background: #f5f5f5; padding: 5px 8px; border-radius: 3px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 14px; }
+  .sum-box { border: 1px solid #ddd; border-radius: 4px; padding: 6px 12px; }
+  .sum-box .lbl { font-size: 7.5px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sum-box .val { font-size: 13px; font-weight: bold; color: #1d4ed8; margin-top: 1px; }
+  .val-green { color: #16a34a; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1d4ed8; color: #fff; }
+  th  { padding: 5px 6px; text-align: left; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  th.r, td.r { text-align: right; }
+  td  { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; font-size: 8.5px; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .added { color: #16a34a; font-weight: 700; }
+  .after { color: #1d4ed8; font-weight: 700; }
+  tfoot td { font-weight: bold; background: #eff6ff; border-top: 2px solid #1d4ed8; font-size: 9px; }
+  .footer { margin-top: 16px; font-size: 7.5px; color: #aaa; text-align: right; }
+</style>
+</head>
+<body>
+
+<h1>SENOVKA ERP — Production Entry Report</h1>
+<p class="meta">Generated: {{ generated_at|date:"d M Y H:i" }}</p>
+
+{% if date_from or date_to %}
+<div class="filters">
+  <strong>Period:</strong>
+  {{ date_from|default:"—" }} to {{ date_to|default:"—" }}
+</div>
+{% endif %}
+
+<div class="summary">
+  <div class="sum-box">
+    <div class="lbl">Total Records</div>
+    <div class="val">{{ entries|length }}</div>
+  </div>
+  <div class="sum-box">
+    <div class="lbl">Total Units Added</div>
+    <div class="val val-green">{{ total_added|floatformat:0 }}</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Category</th>
+      <th>Product</th>
+      <th class="r">Qty Added</th>
+      <th class="r">Before</th>
+      <th class="r">After</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ e.date|date:"d-m-Y" }}</td>
+      <td>{{ e.product.category.name }}</td>
+      <td><strong>{{ e.product.name }}</strong>{% if e.product.size %} <span style="color:#9ca3af;">({{ e.product.size }})</span>{% endif %}</td>
+      <td class="r"><span class="added">+{{ e.qty_added|floatformat:0 }}</span></td>
+      <td class="r" style="color:#6b7280;">{{ e.qty_before|floatformat:0 }}</td>
+      <td class="r"><span class="after">{{ e.qty_after|floatformat:0 }}</span></td>
+      <td style="color:#6b7280;">{{ e.notes|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" style="text-align:center;padding:16px;color:#9ca3af;">No entries found.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4">TOTAL</td>
+      <td class="r added">{{ total_added|floatformat:0 }}</td>
+      <td colspan="3"></td>
+    </tr>
+  </tfoot>
+</table>
+
+<p class="footer">SENOVKA ERP &mdash; Production Entries &mdash; {{ generated_at|date:"d M Y" }}</p>
+</body>
+</html>

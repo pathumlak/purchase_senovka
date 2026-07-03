@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Purchase Orders — SENOVKA ERP{% endblock %}
+{% block page_title %}Purchase Orders{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Purchase Orders</h2>
+      <p class="mt-0.5 text-sm text-gray-500">Send orders to suppliers — receive stock and offset customer balances</p>
+    </div>
+    <a href="{% url 'suppliers:purchase_order_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Order
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-wrap gap-3 items-end">
+    <div class="flex-1 min-w-36">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+      <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+        <option value="">All Statuses</option>
+        {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex-1 min-w-40">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Supplier</label>
+      <select name="supplier" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+        <option value="">All Suppliers</option>
+        {% for s in suppliers %}
+        <option value="{{ s.id }}" {% if supplier_filter == s.id|stringformat:'s' %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">Filter</button>
+      <a href="{% url 'suppliers:purchase_order_list' %}" class="px-4 py-2 border border-gray-300 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition">Reset</a>
+    </div>
+  </form>
+
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PO #</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplier</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order Date</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Expected</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for order in page_obj %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-3">
+              <a href="{% url 'suppliers:purchase_order_detail' order.pk %}" class="text-sm font-semibold text-primary-700 hover:underline">{{ order.order_number }}</a>
+            </td>
+            <td class="px-5 py-3 text-sm text-gray-700">{{ order.supplier.name }}</td>
+            <td class="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">{{ order.order_date|date:"d M Y" }}</td>
+            <td class="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">{{ order.expected_date|date:"d M Y"|default:"—" }}</td>
+            <td class="px-5 py-3 text-sm font-semibold text-gray-900 text-right">Rs. {{ order.total_cost|floatformat:2 }}</td>
+            <td class="px-5 py-3 text-center">
+              {% if order.status == 'pending' %}
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Pending</span>
+              {% elif order.status == 'received' %}
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Received</span>
+              {% else %}
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Cancelled</span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-3 text-center">
+              <a href="{% url 'suppliers:purchase_order_detail' order.pk %}" class="text-xs text-primary-600 hover:underline font-medium">View</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center">
+              <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <p class="text-sm font-medium text-gray-700">No purchase orders found</p>
+              <a href="{% url 'suppliers:purchase_order_create' %}" class="mt-2 inline-block text-sm text-primary-600 hover:underline font-medium">Create the first one</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 flex-wrap">
+      <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} — {{ page_obj.paginator.count }} order{{ page_obj.paginator.count|pluralize }}</p>
+      <div class="flex items-center gap-1.5">
+        {% if page_obj.has_previous %}
+        <a href="?status={{ status_filter }}&supplier={{ supplier_filter }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Previous</a>
+        {% else %}
+        <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Previous</span>
+        {% endif %}
+        {% for page_num in page_obj.paginator.page_range %}
+          {% if page_num == page_obj.number %}
+          <span class="px-2.5 py-1.5 min-w-8 text-center rounded-md text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">{{ page_num }}</span>
+          {% elif page_num >= page_obj.number|add:-2 and page_num <= page_obj.number|add:2 %}
+          <a href="?status={{ status_filter }}&supplier={{ supplier_filter }}&page={{ page_num }}" class="px-2.5 py-1.5 min-w-8 text-center rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">{{ page_num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="?status={{ status_filter }}&supplier={{ supplier_filter }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">Next</a>
+        {% else %}
+        <span class="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-semibold text-gray-400">Next</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
